@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://dpo48kodd7oft"]
+
+[ext_resource type="Script" uid="uid://detkcp8v20vt5" path="res://ModifierCard/ModifierCard.cs" id="1_kmh0u"]
+
+[node name="ModifierCard" type="PanelContainer" unique_id=697880141]
+custom_minimum_size = Vector2(100, 50)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+script = ExtResource("1_kmh0u")
+
+[node name="PivotMover" type="Control" parent="." unique_id=866881154]
+layout_mode = 2
+
+[node name="ModifierNameLabel" type="Label" parent="PivotMover" unique_id=1441027573]
+unique_name_in_owner = true
+layout_mode = 0
+offset_top = 8.0
+offset_right = 40.0
+offset_bottom = 31.0

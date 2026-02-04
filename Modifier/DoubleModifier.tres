@@ -1,0 +1,6 @@
+[gd_resource type="Resource" script_class="DoubleModifier" format=3 uid="uid://ba44ahb7welcl"]
+
+[ext_resource type="Script" uid="uid://ch5qmudi0d638" path="res://Modifier/DoubleModifier.cs" id="1_0t46o"]
+
+[resource]
+script = ExtResource("1_0t46o")
