@@ -1,0 +1,27 @@
+[gd_scene format=3 uid="uid://deyckw5ede84g"]
+
+[ext_resource type="Script" uid="uid://kldk6u80ciq2" path="res://Dice/Dice.cs" id="1_yynlm"]
+
+[node name="Dice" type="PanelContainer" unique_id=580070206]
+custom_minimum_size = Vector2(60, 60)
+offset_right = 40.0
+offset_bottom = 40.0
+size_flags_horizontal = 4
+size_flags_vertical = 4
+script = ExtResource("1_yynlm")
+
+[node name="AnimationWrapper" type="Control" parent="." unique_id=1251819618]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="NumberLabel" type="Label" parent="AnimationWrapper" unique_id=375986413]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4

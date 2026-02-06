@@ -29,6 +29,18 @@ public partial class Main : Control
     [Export]
     public ModifierResource PlusOneSkill;
 
+    //
+    // Dice objects
+    //
+    [Export]
+    public GridContainer DiceContainer;
+
+    [Export]
+    public PackedScene DiceScene; // 骰子場景的模板
+    private System.Collections.Generic.List<Dice> _activeDices = [];
+
+    // End Dice objects
+
     [Export]
     public HBoxContainer PipelineContainer;
 
@@ -114,7 +126,7 @@ public partial class Main : Control
         UpdateUI();
     }
 
-    private void OnRollButtonPressed()
+    private int rollDice()
     {
         // 1. 執行核心邏輯
         int roll = _random.Next(1, 7);
@@ -128,14 +140,39 @@ public partial class Main : Control
                 GD.Print($"[Pipeline] {modifier.GetType().Name}: {before} -> {modifiedRoll}");
             }
         }
-        _currentScore += modifiedRoll;
+        return modifiedRoll;
+    }
+
+    private void OnRollButtonPressed()
+    {
+        // A. 清除舊的骰子
+        foreach (var d in _activeDices)
+            d.QueueFree();
+        _activeDices.Clear();
+        // B. 生成多顆骰子 (例如一次擲 3 顆)
+
+        int totalRoll = 0;
+        for (int i = 0; i < 3; i++)
+        {
+            // 實例化骰子
+            Dice diceUI = DiceScene.Instantiate<Dice>();
+            DiceContainer.AddChild(diceUI);
+            _activeDices.Add(diceUI);
+            // 擲骰並顯示結果
+            int rollValue = rollDice();
+
+            // D. 更新骰子視覺
+            diceUI.SetValue(rollValue);
+            totalRoll += rollValue; // 累加到總分
+        }
+        _currentScore += totalRoll;
 
         // 2. 更新視覺反饋
-        ResultLabel.Text = $"Last Roll: {roll}, Modified: {modifiedRoll}";
+        ResultLabel.Text = $"Round Score: {totalRoll} | Current Score: {_currentScore}";
         UpdateUI();
 
         // 3. 簡單的遊戲終點判斷
-        if (_currentScore >= 50)
+        if (_currentScore >= 100)
         {
             ResultLabel.Text = "Status: Target Reached! (Winner)";
             RollButton.Disabled = true;

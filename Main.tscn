@@ -4,8 +4,9 @@
 [ext_resource type="Resource" uid="uid://2o38wxxcvga5" path="res://Modifier/PlusOneModifier.tres" id="3_cm0pq"]
 [ext_resource type="Resource" uid="uid://ba44ahb7welcl" path="res://Modifier/DoubleModifier.tres" id="3_r0du0"]
 [ext_resource type="PackedScene" uid="uid://dpo48kodd7oft" path="res://ModifierCard/ModifierCard.tscn" id="4_cm0pq"]
+[ext_resource type="PackedScene" uid="uid://deyckw5ede84g" path="res://Dice/Dice.tscn" id="4_fos0i"]
 
-[node name="Main" type="Control" unique_id=1303641149 node_paths=PackedStringArray("ScoreLabel", "ResultLabel", "RollButton", "DoubleSkillButton", "PlusOneSkillButton", "PipelineContainer")]
+[node name="Main" type="Control" unique_id=1303641149 node_paths=PackedStringArray("ScoreLabel", "ResultLabel", "RollButton", "DoubleSkillButton", "PlusOneSkillButton", "DiceContainer", "PipelineContainer")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -15,11 +16,13 @@ grow_vertical = 2
 script = ExtResource("1_glv2v")
 ScoreLabel = NodePath("VBoxContainer/ScoreLabel")
 ResultLabel = NodePath("VBoxContainer/ResultLabel")
-RollButton = NodePath("VBoxContainer/RollButton")
-DoubleSkillButton = NodePath("VBoxContainer/DoubleSkillButton")
-PlusOneSkillButton = NodePath("VBoxContainer/PlusOneSkillButton")
+RollButton = NodePath("VBoxContainer/HBoxContainer/RollButton")
+DoubleSkillButton = NodePath("VBoxContainer/HBoxContainer/DoubleSkillButton")
+PlusOneSkillButton = NodePath("VBoxContainer/HBoxContainer/PlusOneSkillButton")
 DoubleSkill = ExtResource("3_r0du0")
 PlusOneSkill = ExtResource("3_cm0pq")
+DiceContainer = NodePath("VBoxContainer/DiceContainer")
+DiceScene = ExtResource("4_fos0i")
 PipelineContainer = NodePath("VBoxContainer/PipelineContainer")
 ModifierCardScene = ExtResource("4_cm0pq")
 
@@ -31,17 +34,27 @@ offset_bottom = 86.0
 [node name="ScoreLabel" type="Label" parent="VBoxContainer" unique_id=1161031495]
 layout_mode = 2
 
-[node name="RollButton" type="Button" parent="VBoxContainer" unique_id=2049540587]
-layout_mode = 2
-
 [node name="ResultLabel" type="Label" parent="VBoxContainer" unique_id=290754859]
 layout_mode = 2
 
-[node name="PlusOneSkillButton" type="Button" parent="VBoxContainer" unique_id=1856314756]
+[node name="DiceContainer" type="GridContainer" parent="VBoxContainer" unique_id=421033610]
 layout_mode = 2
-
-[node name="DoubleSkillButton" type="Button" parent="VBoxContainer" unique_id=1755590146]
-layout_mode = 2
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
+columns = 3
 
 [node name="PipelineContainer" type="HBoxContainer" parent="VBoxContainer" unique_id=1002814208]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer" unique_id=340247418]
+layout_mode = 2
+
+[node name="RollButton" type="Button" parent="VBoxContainer/HBoxContainer" unique_id=2049540587]
+layout_mode = 2
+text = "Roll!"
+
+[node name="PlusOneSkillButton" type="Button" parent="VBoxContainer/HBoxContainer" unique_id=1856314756]
+layout_mode = 2
+
+[node name="DoubleSkillButton" type="Button" parent="VBoxContainer/HBoxContainer" unique_id=1755590146]
 layout_mode = 2
