@@ -2,6 +2,15 @@ using System;
 using Godot;
 using Godot.Collections;
 
+public enum BattleState
+{
+    PlayerTurn,
+    Processing,
+    EnemyTurn,
+    Victory,
+    Defeat,
+}
+
 public partial class Main : Control
 {
     // 使用 [Export] 讓你在編輯器介面就能直接拖放節點引用，減少 GetNode 的硬編碼
@@ -47,21 +56,78 @@ public partial class Main : Control
     [Export]
     public PackedScene ModifierCardScene; // 這是場景的模板
 
+    // Enemy HP
     [Export]
     public ProgressBar EnemyHealthBar;
     private int _maxEnemyHP = 100;
     private int _currentEnemyHP = 100;
 
+    // Player HP
+    [Export]
+    public ProgressBar PlayerHealthBar;
+    private int _maxPlayerHP = 100;
+    private int _currentPlayerHP = 100;
+
     private bool _isDoubled = false;
     private bool _isPlusOned = false;
     private Random _random = new();
 
+    private BattleState _currentState;
+
+    private void _DisablePlayerButtons()
+    {
+        RollButton.Disabled = true;
+        DoubleSkillButton.Disabled = true;
+        PlusOneSkillButton.Disabled = true;
+    }
+
+    private void _EnablePlayerButtons()
+    {
+        RollButton.Disabled = false;
+        DoubleSkillButton.Disabled = false;
+        PlusOneSkillButton.Disabled = false;
+    }
+
+    private void ChangeBattleState(BattleState newState)
+    {
+        _currentState = newState;
+
+        switch (_currentState)
+        {
+            case BattleState.PlayerTurn:
+                _EnablePlayerButtons();
+                ResultLabel.Text = "Your Turn! Choose your modifiers and Roll.";
+                break;
+
+            case BattleState.Processing:
+                _DisablePlayerButtons();
+                break;
+
+            case BattleState.EnemyTurn:
+                _DisablePlayerButtons();
+                PerformEnemyAction();
+                break;
+            case BattleState.Victory:
+                ResultLabel.Text = "Victory! You defeated the enemy!";
+                _DisablePlayerButtons();
+                // 這裡可以播放一段勝利的動畫或顯示下一關按鈕
+                break;
+            case BattleState.Defeat:
+                ResultLabel.Text = "Defeat... The enemy was too strong.";
+                _DisablePlayerButtons();
+                // 這裡可以播放一段哀傷的動畫或顯示重來按鈕
+                break;
+        }
+    }
+
     // 當場景載入完成時調用 (類似於 Start 或 Initialize)
     public override void _Ready()
     {
-        // Initialize enemy health bar
+        // Initialize enemy/player health bar
         EnemyHealthBar.MaxValue = _maxEnemyHP;
         EnemyHealthBar.Value = _currentEnemyHP;
+        PlayerHealthBar.MaxValue = _maxPlayerHP;
+        PlayerHealthBar.Value = _currentPlayerHP;
 
         UpdateUI();
         // 這裡就是「信號 (Signal)」的串接
@@ -168,13 +234,15 @@ public partial class Main : Control
 
     private void OnRollButtonPressed()
     {
+        ChangeBattleState(BattleState.Processing);
+
         // A. 清除舊的骰子
         foreach (var d in _activeDices)
             d.QueueFree();
         _activeDices.Clear();
         // B. 生成多顆骰子 (例如一次擲 3 顆)
 
-        int totalRoll = 0;
+        int totalDamage = 0;
         for (int i = 0; i < 3; i++)
         {
             // 實例化骰子
@@ -186,22 +254,31 @@ public partial class Main : Control
 
             // D. 更新骰子視覺
             diceUI.SetValue(rollValue);
-            totalRoll += rollValue; // 累加到總分
+            totalDamage += rollValue; // 累加到總分
         }
-        ProcessDamage(totalRoll);
+        var isDead = ProcessDamage(totalDamage);
         UpdateUI();
+        // E. 進入敵人回合
+        if (isDead)
+        {
+            ChangeBattleState(BattleState.Victory);
+        }
+        else
+        {
+            ChangeBattleState(BattleState.EnemyTurn);
+        }
     }
 
-    private void ProcessDamage(int totalDamage)
+    private bool ProcessDamage(int totalDamage)
     {
         _currentEnemyHP -= totalDamage;
         GetTree().CreateTween().TweenProperty(EnemyHealthBar, "value", _currentEnemyHP, 0.5f);
         if (_currentEnemyHP <= 0)
         {
             _currentEnemyHP = 0;
-            ResultLabel.Text = "Status: Enemy Defeated!";
-            RollButton.Disabled = true;
+            return true;
         }
+        return false;
     }
 
     private void UpdateUI()
@@ -217,5 +294,35 @@ public partial class Main : Control
         // 縮放動畫：放大 -> 回彈
         tween.TweenProperty(ScoreLabel, "scale", new Vector2(1.2f, 1.2f), 0.05f); // 放大 from 1.0 to 1.2
         tween.TweenProperty(ScoreLabel, "scale", new Vector2(1.0f, 1.0f), 0.1f); // 縮回 to 1.0
+    }
+
+    // Enemy action
+    private async void PerformEnemyAction()
+    {
+        ResultLabel.Text = "Enemy is attacking...";
+
+        // 模擬敵人思考/動畫時間
+        await ToSignal(GetTree().CreateTimer(1.0f), "timeout");
+
+        // 這裡可以實作玩家的血條扣除
+        // 1. 執行扣血
+        int enemyDamage = 33;
+        _currentPlayerHP -= enemyDamage;
+
+        // 2. 更新 UI
+        GetTree().CreateTween().TweenProperty(PlayerHealthBar, "value", _currentPlayerHP, 0.3f);
+        GD.Print($"[Battle] Player took {enemyDamage} damage. Current HP: {_currentPlayerHP}");
+
+        // 3. 檢查玩家是否死亡 (Defeat)
+        if (_currentPlayerHP <= 0)
+        {
+            _currentPlayerHP = 0;
+            ChangeBattleState(BattleState.Defeat);
+        }
+        else
+        {
+            // 沒死才輪到玩家
+            ChangeBattleState(BattleState.PlayerTurn);
+        }
     }
 }

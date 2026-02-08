@@ -6,7 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://dpo48kodd7oft" path="res://ModifierCard/ModifierCard.tscn" id="4_cm0pq"]
 [ext_resource type="PackedScene" uid="uid://deyckw5ede84g" path="res://Dice/Dice.tscn" id="4_fos0i"]
 
-[node name="Main" type="Control" unique_id=1303641149 node_paths=PackedStringArray("ScoreLabel", "ResultLabel", "RollButton", "DoubleSkillButton", "PlusOneSkillButton", "DiceContainer", "PipelineContainer", "EnemyHealthBar")]
+[node name="Main" type="Control" unique_id=1303641149 node_paths=PackedStringArray("ScoreLabel", "ResultLabel", "RollButton", "DoubleSkillButton", "PlusOneSkillButton", "DiceContainer", "PipelineContainer", "EnemyHealthBar", "PlayerHealthBar")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -25,14 +25,15 @@ DiceContainer = NodePath("VBoxContainer/DiceContainer")
 DiceScene = ExtResource("4_fos0i")
 PipelineContainer = NodePath("VBoxContainer/PipelineContainer")
 ModifierCardScene = ExtResource("4_cm0pq")
-EnemyHealthBar = NodePath("VBoxContainer/ProgressBar")
+EnemyHealthBar = NodePath("VBoxContainer/EnemyHP")
+PlayerHealthBar = NodePath("VBoxContainer/PlayerHP")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1132299088]
 layout_mode = 0
 offset_right = 55.0
 offset_bottom = 86.0
 
-[node name="ProgressBar" type="ProgressBar" parent="VBoxContainer" unique_id=906954933]
+[node name="EnemyHP" type="ProgressBar" parent="VBoxContainer" unique_id=906954933]
 layout_mode = 2
 
 [node name="ScoreLabel" type="Label" parent="VBoxContainer" unique_id=1161031495]
@@ -61,4 +62,7 @@ text = "Roll!"
 layout_mode = 2
 
 [node name="DoubleSkillButton" type="Button" parent="VBoxContainer/HBoxContainer" unique_id=1755590146]
+layout_mode = 2
+
+[node name="PlayerHP" type="ProgressBar" parent="VBoxContainer" unique_id=1568229309]
 layout_mode = 2
