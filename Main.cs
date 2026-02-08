@@ -47,7 +47,11 @@ public partial class Main : Control
     [Export]
     public PackedScene ModifierCardScene; // 這是場景的模板
 
-    private int _currentScore = 0;
+    [Export]
+    public ProgressBar EnemyHealthBar;
+    private int _maxEnemyHP = 100;
+    private int _currentEnemyHP = 100;
+
     private bool _isDoubled = false;
     private bool _isPlusOned = false;
     private Random _random = new();
@@ -55,8 +59,11 @@ public partial class Main : Control
     // 當場景載入完成時調用 (類似於 Start 或 Initialize)
     public override void _Ready()
     {
-        UpdateUI();
+        // Initialize enemy health bar
+        EnemyHealthBar.MaxValue = _maxEnemyHP;
+        EnemyHealthBar.Value = _currentEnemyHP;
 
+        UpdateUI();
         // 這裡就是「信號 (Signal)」的串接
         // 在 C# 中，我們通常使用 += 語法來訂閱信號（事件）
         RollButton.Pressed += OnRollButtonPressed;
@@ -181,23 +188,25 @@ public partial class Main : Control
             diceUI.SetValue(rollValue);
             totalRoll += rollValue; // 累加到總分
         }
-        _currentScore += totalRoll;
-
-        // 2. 更新視覺反饋
-        ResultLabel.Text = $"Round Score: {totalRoll} | Current Score: {_currentScore}";
+        ProcessDamage(totalRoll);
         UpdateUI();
+    }
 
-        // 3. 簡單的遊戲終點判斷
-        if (_currentScore >= 100)
+    private void ProcessDamage(int totalDamage)
+    {
+        _currentEnemyHP -= totalDamage;
+        GetTree().CreateTween().TweenProperty(EnemyHealthBar, "value", _currentEnemyHP, 0.5f);
+        if (_currentEnemyHP <= 0)
         {
-            ResultLabel.Text = "Status: Target Reached! (Winner)";
+            _currentEnemyHP = 0;
+            ResultLabel.Text = "Status: Enemy Defeated!";
             RollButton.Disabled = true;
         }
     }
 
     private void UpdateUI()
     {
-        ScoreLabel.Text = $"Current Score: {_currentScore} / 50";
+        ScoreLabel.Text = $"Current HP: {_currentEnemyHP} / {_maxEnemyHP}";
 
         // 防止重複執行動畫，先建立新的 Tween
         Tween tween = GetTree().CreateTween();
