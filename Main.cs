@@ -78,12 +78,28 @@ public partial class Main : Control
         // 1. 實例化 (像 new 一個物件，但它是場景)
         var card = ModifierCardScene.Instantiate<ModifierCard>();
 
-        // 2. 設定資料
-        // 注意：這裡建議在 ModifierResource 加一個變數來存顯示名稱，或是直接用 GetType().Name
-        card.SetName(modifier.GetType().Name);
+        // 2. Link the card with its ModifierResource data (這裡可以直接傳整個 Resource，或是只傳必要的資訊)
+        card.LinkModifierResource(modifier);
 
         // 3. 掛載到 UI 容器下
         PipelineContainer.AddChild(card);
+
+        card.ToggleStatusChanged += (bool isActive) => SyncActiveModifiers();
+    }
+
+    private void SyncActiveModifiers()
+    {
+        ActiveModifiers.Clear();
+
+        foreach (var node in PipelineContainer.GetChildren())
+        {
+            if (node is ModifierCard card && card.IsActive)
+            {
+                ActiveModifiers.Add(card.SourceResource);
+            }
+        }
+
+        GD.Print($"[System] Sync 完成。當前啟用的 Modifier 數量: {ActiveModifiers.Count}");
     }
 
     private void OnPlusOneSkillButtonPressed()

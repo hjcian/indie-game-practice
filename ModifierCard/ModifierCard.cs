@@ -3,6 +3,34 @@ using Godot;
 
 public partial class ModifierCard : PanelContainer
 {
+    // This
+    public ModifierResource SourceResource;
+
+    public bool IsActive = true;
+
+    [Signal]
+    public delegate void ToggleStatusChangedEventHandler(bool isActive);
+
+    public override void _GuiInput(InputEvent @event)
+    {
+        // 判斷是否為滑鼠左鍵點擊
+        if (@event is InputEventMouseButton mb && mb.Pressed && mb.ButtonIndex == MouseButton.Left)
+        {
+            ToggleActive();
+        }
+    }
+
+    private void ToggleActive()
+    {
+        IsActive = !IsActive;
+
+        // 視覺回饋：變灰或恢復原色
+        Modulate = IsActive ? new Color(1, 1, 1) : new Color(0.3f, 0.3f, 0.3f, 0.7f);
+
+        // 發出訊號
+        EmitSignal(SignalName.ToggleStatusChanged, IsActive);
+    }
+
     // Called when the node enters the scene tree for the first time.
     public override void _Ready()
     {
@@ -45,8 +73,9 @@ public partial class ModifierCard : PanelContainer
     // Called every frame. 'delta' is the elapsed time since the previous frame.
     public override void _Process(double delta) { }
 
-    public new void SetName(string name)
+    public void LinkModifierResource(ModifierResource source)
     {
-        GetNode<Label>("%ModifierNameLabel").Text = name;
+        SourceResource = source;
+        GetNode<Label>("%ModifierNameLabel").Text = SourceResource.GetType().Name;
     }
 }
