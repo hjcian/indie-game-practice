@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using Godot;
 using Godot.Collections;
 
@@ -22,12 +23,6 @@ public partial class Main : Control
 
     [Export]
     public Button RollButton;
-
-    [Export]
-    public Button DoubleSkillButton;
-
-    [Export]
-    public Button PlusOneSkillButton;
 
     [Export]
     public Array<ModifierResource> ActiveModifiers = [];
@@ -56,20 +51,29 @@ public partial class Main : Control
     [Export]
     public PackedScene ModifierCardScene; // 這是場景的模板
 
+    //
+    private static readonly int initHP = 50;
+
     // Enemy HP
     [Export]
     public ProgressBar EnemyHealthBar;
-    private int _maxEnemyHP = 100;
-    private int _currentEnemyHP = 100;
+    private int _maxEnemyHP = initHP;
+    private int _currentEnemyHP = initHP;
 
     // Player HP
     [Export]
     public ProgressBar PlayerHealthBar;
-    private int _maxPlayerHP = 100;
-    private int _currentPlayerHP = 100;
+    private int _maxPlayerHP = initHP;
+    private int _currentPlayerHP = initHP;
 
-    private bool _isDoubled = false;
-    private bool _isPlusOned = false;
+    // Player Skills
+    [Export]
+    public HBoxContainer PlayerSkillsContainer;
+
+    // Possible Skills
+    [Export]
+    public Array<ModifierResource> PossibleModifiers = []; // NOTE: 在 Inspector 裡把所有你寫好的 Resource 丟進這個陣列
+
     private Random _random = new();
 
     private BattleState _currentState;
@@ -77,15 +81,11 @@ public partial class Main : Control
     private void _DisablePlayerButtons()
     {
         RollButton.Disabled = true;
-        DoubleSkillButton.Disabled = true;
-        PlusOneSkillButton.Disabled = true;
     }
 
     private void _EnablePlayerButtons()
     {
         RollButton.Disabled = false;
-        DoubleSkillButton.Disabled = false;
-        PlusOneSkillButton.Disabled = false;
     }
 
     private void ChangeBattleState(BattleState newState)
@@ -111,6 +111,7 @@ public partial class Main : Control
                 ResultLabel.Text = "Victory! You defeated the enemy!";
                 _DisablePlayerButtons();
                 // 這裡可以播放一段勝利的動畫或顯示下一關按鈕
+                ShowRewardOptions();
                 break;
             case BattleState.Defeat:
                 ResultLabel.Text = "Defeat... The enemy was too strong.";
@@ -133,86 +134,25 @@ public partial class Main : Control
         // 這裡就是「信號 (Signal)」的串接
         // 在 C# 中，我們通常使用 += 語法來訂閱信號（事件）
         RollButton.Pressed += OnRollButtonPressed;
-        DoubleSkillButton.Pressed += OnDoubleSkillButtonPressed;
-        DoubleSkillButton.Text = "Double: disabled"; // 初始化按鈕文字
-
-        PlusOneSkillButton.Pressed += OnPlusOneSkillButtonPressed;
-        PlusOneSkillButton.Text = "Plus one: disabled"; // 初始化按鈕文字
     }
 
-    private void AddModifierToVisualPipeline(ModifierResource modifier)
-    {
-        if (ModifierCardScene == null)
-        {
-            GD.PushError("錯誤：ModifierCardScene 尚未在 Inspector 中綁定！");
-            return;
-        }
-
-        // 1. 實例化 (像 new 一個物件，但它是場景)
-        var card = ModifierCardScene.Instantiate<ModifierCard>();
-
-        // 2. Link the card with its ModifierResource data (這裡可以直接傳整個 Resource，或是只傳必要的資訊)
-        card.LinkModifierResource(modifier);
-
-        // 3. 掛載到 UI 容器下
-        PipelineContainer.AddChild(card);
-
-        card.ToggleStatusChanged += (bool isActive) => SyncActiveModifiers();
-    }
-
-    private void SyncActiveModifiers()
+    private void SyncActiveSkills()
     {
         ActiveModifiers.Clear();
 
-        foreach (var node in PipelineContainer.GetChildren())
+        int count = 0;
+        foreach (var node in PlayerSkillsContainer.GetChildren())
         {
+            count++;
             if (node is ModifierCard card && card.IsActive)
             {
                 ActiveModifiers.Add(card.SourceResource);
             }
         }
 
-        GD.Print($"[System] Sync 完成。當前啟用的 Modifier 數量: {ActiveModifiers.Count}");
-    }
-
-    private void OnPlusOneSkillButtonPressed()
-    {
-        if (!_isPlusOned)
-        {
-            if (PlusOneSkill == null)
-            {
-                GD.PushError("錯誤：PlusOneSkill 尚未在 Inspector 中綁定！");
-                return;
-            }
-            _isPlusOned = true;
-            ActiveModifiers.Add(PlusOneSkill);
-            AddModifierToVisualPipeline(PlusOneSkill);
-            GD.Print(
-                $"[System] 注入成功：{PlusOneSkill.ResourceName}, 當前 Modifier 數量: {ActiveModifiers.Count}"
-            );
-        }
-        PlusOneSkillButton.Text = "Applied: Plus One Effect Injected";
-        UpdateUI();
-    }
-
-    private void OnDoubleSkillButtonPressed()
-    {
-        if (!_isDoubled)
-        {
-            if (DoubleSkill == null)
-            {
-                GD.PushError("錯誤：DoubleSkill 尚未在 Inspector 中綁定！");
-                return;
-            }
-            _isDoubled = true;
-            ActiveModifiers.Add(DoubleSkill);
-            AddModifierToVisualPipeline(DoubleSkill);
-            GD.Print(
-                $"[System] 注入成功：{DoubleSkill.ResourceName}, 當前 Modifier 數量: {ActiveModifiers.Count}"
-            );
-        }
-        DoubleSkillButton.Text = "Applied: Double Effect Injected";
-        UpdateUI();
+        GD.Print(
+            $"[System] Sync 完成。 Player's skill count: {count}, 當前啟用的 Modifier 數量: {ActiveModifiers.Count}"
+        );
     }
 
     private int rollDice()
@@ -243,7 +183,7 @@ public partial class Main : Control
         // B. 生成多顆骰子 (例如一次擲 3 顆)
 
         int totalDamage = 0;
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < 5; i++)
         {
             // 實例化骰子
             Dice diceUI = DiceScene.Instantiate<Dice>();
@@ -306,7 +246,7 @@ public partial class Main : Control
 
         // 這裡可以實作玩家的血條扣除
         // 1. 執行扣血
-        int enemyDamage = 33;
+        int enemyDamage = 5;
         _currentPlayerHP -= enemyDamage;
 
         // 2. 更新 UI
@@ -324,5 +264,72 @@ public partial class Main : Control
             // 沒死才輪到玩家
             ChangeBattleState(BattleState.PlayerTurn);
         }
+    }
+
+    // End of a battle round
+
+    private void ShowRewardOptions()
+    {
+        ResultLabel.Text = "Pick a New Skill!";
+
+        // 1. 隨機洗牌或挑選三個
+        GD.Print($"[Reward] Possible Modifiers Count: {PossibleModifiers.Count}");
+        var options = PossibleModifiers.Duplicate(); // 複製一份
+        options.Shuffle(); // 隨機打亂
+
+        // 2. 顯示在 UI 上 (這裡我們重用之前的 AddModifierToVisualPipeline)
+        // 但因為這是「領取獎勵」而非「已啟用的管線」，我們需要一個新的容器
+        // 或是暫時清空 PipelineContainer 來顯示獎勵
+        PipelineContainer.Modulate = new Color(1, 1, 0); // 視覺上提醒這是獎勵時間
+
+        // 清空舊卡片
+        foreach (var n in PipelineContainer.GetChildren())
+            n.QueueFree();
+
+        for (int i = 0; i < 3 && i < options.Count; i++)
+        {
+            AddRewardCard((ModifierResource)options[i]);
+        }
+    }
+
+    private void AddRewardCard(ModifierResource res)
+    {
+        var card = ModifierCardScene.Instantiate<ModifierCard>();
+        card.LinkModifierResource(res);
+        PipelineContainer.AddChild(card);
+
+        // 斷開原本的 Toggle 連結，改連到「領取」邏輯
+        // 我們可以給 Card 加一個模式，或者直接在這裡覆蓋訊號
+        card.ToggleStatusChanged += isActive => OnRewardPicked(res);
+    }
+
+    private void OnRewardPicked(ModifierResource res)
+    {
+        var card = ModifierCardScene.Instantiate<ModifierCard>();
+        card.LinkModifierResource(res);
+        GD.Print($"You picked: {res.ResourceName}");
+        // Change the card's signal to now sync with the active modifiers, since it's now part of the player's permanent collection
+        card.ToggleStatusChanged += isActive => SyncActiveSkills();
+        // 加入玩家永久庫存
+        PlayerSkillsContainer.AddChild(card);
+
+        // 4. 清理 PipelineContainer 剩餘沒被選中的卡片
+        foreach (var n in PipelineContainer.GetChildren())
+        {
+            n.QueueFree();
+        }
+
+        // 目前我們先簡單處理，重設場景
+        ResetBattle();
+    }
+
+    private void ResetBattle()
+    {
+        _currentEnemyHP = _maxEnemyHP;
+        EnemyHealthBar.Value = _currentEnemyHP;
+
+        // 清除 UI 並恢復狀態
+        PipelineContainer.Modulate = new Color(1, 1, 1);
+        ChangeBattleState(BattleState.PlayerTurn);
     }
 }

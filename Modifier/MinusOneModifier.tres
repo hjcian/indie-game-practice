@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="MinusOneModifier" format=3 uid="uid://bmol8fr6vpklq"]
+
+[ext_resource type="Script" uid="uid://cpj82ypi3o652" path="res://Modifier/MinusOneModifier.cs" id="1_3p8dd"]
+
+[resource]
+script = ExtResource("1_3p8dd")
+metadata/_custom_type_script = "uid://cpj82ypi3o652"

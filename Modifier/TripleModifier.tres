@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="TripleModifier" format=3 uid="uid://cuunn7whbj4ro"]
+
+[ext_resource type="Script" uid="uid://dowjfpkvoqg6" path="res://Modifier/TripleModifier.cs" id="1_mga1o"]
+
+[resource]
+script = ExtResource("1_mga1o")
+metadata/_custom_type_script = "uid://dowjfpkvoqg6"
