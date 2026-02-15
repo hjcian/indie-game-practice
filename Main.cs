@@ -3,10 +3,12 @@ using System.Runtime.CompilerServices;
 using Godot;
 using Godot.Collections;
 
-public enum BattleState
+public enum Phase
 {
-    PlayerTurn,
+    PlayerTurn, // Waiting for player input (Roll)
+    PlayerThinking, // Waiting for player to choose modifiers/operators and commit action
     Processing,
+
     EnemyTurn,
     Victory,
     Defeat,
@@ -23,6 +25,9 @@ public partial class Main : Control
 
     [Export]
     public Button RollButton;
+
+    [Export]
+    public Button CommitButton;
 
     [Export]
     public Array<ModifierResource> ActiveModifiers = [];
@@ -54,17 +59,25 @@ public partial class Main : Control
     //
     private static readonly int initHP = 50;
 
-    // Enemy HP
+    // Enemy Info
     [Export]
     public ProgressBar EnemyHealthBar;
+
+    [Export]
+    public Label EnemyWeaknessLabel;
+
     private int _maxEnemyHP = initHP;
     private int _currentEnemyHP = initHP;
+    private int _weaknessValue = 0; // 這個值在每一關重置，或者根據關卡難度增加
 
-    // Player HP
+    // Player Info
     [Export]
     public ProgressBar PlayerHealthBar;
     private int _maxPlayerHP = initHP;
     private int _currentPlayerHP = initHP;
+
+    [Export]
+    public Label PreviewDamageLabel;
 
     // Player Skills
     [Export]
@@ -76,64 +89,147 @@ public partial class Main : Control
 
     private Random _random = new();
 
-    private BattleState _currentState;
+    private Phase _currentState;
 
-    private void _DisablePlayerButtons()
+    private void _DisableRollButton()
     {
         RollButton.Disabled = true;
     }
 
-    private void _EnablePlayerButtons()
+    private void _EnableRollButton()
     {
         RollButton.Disabled = false;
     }
 
-    private void ChangeBattleState(BattleState newState)
+    private void _DisableCommitButton()
+    {
+        CommitButton.Disabled = true;
+    }
+
+    private void _EnableCommitButton()
+    {
+        CommitButton.Disabled = false;
+    }
+
+    private void ChangePhase(Phase newState)
     {
         _currentState = newState;
 
         switch (_currentState)
         {
-            case BattleState.PlayerTurn:
-                _EnablePlayerButtons();
-                ResultLabel.Text = "Your Turn! Choose your modifiers and Roll.";
+            case Phase.PlayerTurn:
+                _EnableRollButton();
+                _DisableCommitButton();
+                ResultLabel.Text = "Your Turn! Dice the Roll!";
+                PreviewDamageLabel.Text = "";
                 break;
 
-            case BattleState.Processing:
-                _DisablePlayerButtons();
+            case Phase.Processing:
+                _DisableRollButton();
+                _DisableCommitButton();
                 break;
-
-            case BattleState.EnemyTurn:
-                _DisablePlayerButtons();
+            case Phase.PlayerThinking:
+                _DisableRollButton();
+                _EnableCommitButton();
+                ResultLabel.Text = "Choose your modifiers and commit your action.";
+                break;
+            case Phase.EnemyTurn:
+                _DisableRollButton();
                 PerformEnemyAction();
                 break;
-            case BattleState.Victory:
+            case Phase.Victory:
                 ResultLabel.Text = "Victory! You defeated the enemy!";
-                _DisablePlayerButtons();
+                _DisableRollButton();
+                _DisableCommitButton();
                 // 這裡可以播放一段勝利的動畫或顯示下一關按鈕
-                ShowRewardOptions();
+                // ShowRewardOptions();
                 break;
-            case BattleState.Defeat:
+            case Phase.Defeat:
                 ResultLabel.Text = "Defeat... The enemy was too strong.";
-                _DisablePlayerButtons();
+                _DisableRollButton();
                 // 這裡可以播放一段哀傷的動畫或顯示重來按鈕
                 break;
         }
     }
 
-    // 當場景載入完成時調用 (類似於 Start 或 Initialize)
-    public override void _Ready()
+    private void StartNewLevel()
     {
+        // Initialize HP and weakness value for the new level
         // Initialize enemy/player health bar
         EnemyHealthBar.MaxValue = _maxEnemyHP;
         EnemyHealthBar.Value = _currentEnemyHP;
         PlayerHealthBar.MaxValue = _maxPlayerHP;
         PlayerHealthBar.Value = _currentPlayerHP;
+        _weaknessValue = _random.Next(_maxEnemyHP / 4, _maxEnemyHP / 2); // 隨機設定弱點值，這會影響玩家的策略選擇
+        EnemyWeaknessLabel.Text = $"Enemy Weakness: {_weaknessValue}";
 
+        // Update the UI to reflect the new level's stats
         UpdateUI();
+
+        // Change the battle state to PlayerTurn to start the new level
         // 這裡就是「信號 (Signal)」的串接
         // 在 C# 中，我們通常使用 += 語法來訂閱信號（事件）
         RollButton.Pressed += OnRollButtonPressed;
+        CommitButton.Pressed += CommitPlayerAction;
+        ChangePhase(Phase.PlayerTurn);
+    }
+
+    private void OnRollButtonPressed()
+    {
+        ChangePhase(Phase.Processing);
+        // update the UI to show the rolled dice results
+        // A. 清除舊的骰子
+        foreach (var d in _activeDices)
+            d.QueueFree();
+        _activeDices.Clear();
+        // B. 生成多顆骰子
+        for (int i = 0; i < 5; i++)
+        {
+            // 擲骰
+            int val = _random.Next(1, 7);
+
+            // C. 實例化骰子 UI
+            Dice diceUI = DiceScene.Instantiate<Dice>();
+            DiceContainer.AddChild(diceUI);
+            _activeDices.Add(diceUI);
+            // D. 更新骰子視覺
+            diceUI.SetValue(val);
+        }
+        UpdatePreviewDamage();
+        ChangePhase(Phase.PlayerThinking);
+    }
+
+    private void CommitPlayerAction()
+    {
+        // NOTE: Come from player click the Commit button
+        ChangePhase(Phase.Processing);
+
+        // Apply the final dice results to the enemy's HP
+        int totalDamage = 0;
+        foreach (var d in _activeDices)
+        {
+            totalDamage += d.CurrentValue; // 假設 Dice 類別有一個 CurrentValue 屬性來存儲當前的骰子點數
+        }
+        // Check if the enemy is defeated, if so, change state to Victory
+        var isDead = ProcessDamage(totalDamage);
+        UpdateUI();
+        // E. 進入敵人回合
+        if (isDead)
+        {
+            ChangePhase(Phase.Victory);
+        }
+        else
+        {
+            ChangePhase(Phase.PlayerTurn);
+        }
+    }
+
+    private void EndLevel() { }
+
+    // 當場景載入完成時調用 (類似於 Start 或 Initialize)
+    public override void _Ready()
+    {
+        StartNewLevel();
     }
 
     private void SyncActiveSkills()
@@ -172,43 +268,6 @@ public partial class Main : Control
         return modifiedRoll;
     }
 
-    private void OnRollButtonPressed()
-    {
-        ChangeBattleState(BattleState.Processing);
-
-        // A. 清除舊的骰子
-        foreach (var d in _activeDices)
-            d.QueueFree();
-        _activeDices.Clear();
-        // B. 生成多顆骰子 (例如一次擲 3 顆)
-
-        int totalDamage = 0;
-        for (int i = 0; i < 5; i++)
-        {
-            // 實例化骰子
-            Dice diceUI = DiceScene.Instantiate<Dice>();
-            DiceContainer.AddChild(diceUI);
-            _activeDices.Add(diceUI);
-            // 擲骰並顯示結果
-            int rollValue = rollDice();
-
-            // D. 更新骰子視覺
-            diceUI.SetValue(rollValue);
-            totalDamage += rollValue; // 累加到總分
-        }
-        var isDead = ProcessDamage(totalDamage);
-        UpdateUI();
-        // E. 進入敵人回合
-        if (isDead)
-        {
-            ChangeBattleState(BattleState.Victory);
-        }
-        else
-        {
-            ChangeBattleState(BattleState.EnemyTurn);
-        }
-    }
-
     private bool ProcessDamage(int totalDamage)
     {
         _currentEnemyHP -= totalDamage;
@@ -236,6 +295,16 @@ public partial class Main : Control
         tween.TweenProperty(ScoreLabel, "scale", new Vector2(1.0f, 1.0f), 0.1f); // 縮回 to 1.0
     }
 
+    private void UpdatePreviewDamage()
+    {
+        int totalDamage = 0;
+        foreach (var d in _activeDices)
+        {
+            totalDamage += d.CurrentValue; // 假設 Dice 類別有一個 CurrentValue 屬性來存儲當前的骰子點數
+        }
+        PreviewDamageLabel.Text = $"Preview Damage: {totalDamage}";
+    }
+
     // Enemy action
     private async void PerformEnemyAction()
     {
@@ -257,12 +326,12 @@ public partial class Main : Control
         if (_currentPlayerHP <= 0)
         {
             _currentPlayerHP = 0;
-            ChangeBattleState(BattleState.Defeat);
+            ChangePhase(Phase.Defeat);
         }
         else
         {
             // 沒死才輪到玩家
-            ChangeBattleState(BattleState.PlayerTurn);
+            ChangePhase(Phase.PlayerTurn);
         }
     }
 
@@ -330,6 +399,6 @@ public partial class Main : Control
 
         // 清除 UI 並恢復狀態
         PipelineContainer.Modulate = new Color(1, 1, 1);
-        ChangeBattleState(BattleState.PlayerTurn);
+        ChangePhase(Phase.PlayerTurn);
     }
 }

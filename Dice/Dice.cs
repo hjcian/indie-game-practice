@@ -6,9 +6,11 @@ public partial class Dice : PanelContainer
     // [Export]
     // public Label NumberLabel;
     private Label _numberLabel;
+    public int CurrentValue { get; private set; }
 
     public void SetValue(int value)
     {
+        CurrentValue = value;
         _numberLabel.Text = value.ToString();
 
         // 1.4: Juice it up with random colors
