@@ -142,7 +142,6 @@ public partial class Main : Control
                 _DisableRollButton();
                 _DisableCommitButton();
                 // 這裡可以播放一段勝利的動畫或顯示下一關按鈕
-                // ShowRewardOptions();
                 break;
             case Phase.Defeat:
                 ResultLabel.Text = "Defeat... The enemy was too strong.";
@@ -163,6 +162,7 @@ public partial class Main : Control
         _weaknessValue = _random.Next(_maxEnemyHP / 4, _maxEnemyHP / 2); // 隨機設定弱點值，這會影響玩家的策略選擇
         EnemyWeaknessLabel.Text = $"Enemy Weakness: {_weaknessValue}";
 
+        InitializePlayerSkills();
         // Update the UI to reflect the new level's stats
         UpdateUI();
 
@@ -336,6 +336,25 @@ public partial class Main : Control
     }
 
     // End of a battle round
+
+    private void InitializePlayerSkills()
+    {
+        var plusOneCard = ModifierCardScene.Instantiate<ModifierCard>();
+        plusOneCard.LinkModifierResource(new PlusOneModifier());
+        PlayerSkillsContainer.AddChild(plusOneCard);
+
+        var plusThreeCard = ModifierCardScene.Instantiate<ModifierCard>();
+        plusThreeCard.LinkModifierResource(new PlusThreeModifier());
+        PlayerSkillsContainer.AddChild(plusThreeCard);
+
+        var doubleCard = ModifierCardScene.Instantiate<ModifierCard>();
+        doubleCard.LinkModifierResource(new DoubleModifier());
+        PlayerSkillsContainer.AddChild(doubleCard);
+
+        var tripleCard = ModifierCardScene.Instantiate<ModifierCard>();
+        tripleCard.LinkModifierResource(new TripleModifier());
+        PlayerSkillsContainer.AddChild(tripleCard);
+    }
 
     private void ShowRewardOptions()
     {

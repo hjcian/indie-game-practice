@@ -76,7 +76,7 @@ public partial class ModifierCard : PanelContainer
     public void LinkModifierResource(ModifierResource source)
     {
         SourceResource = source;
-        GetNode<Label>("%ModifierNameLabel").Text = SourceResource.GetType().Name;
+        GetNode<Label>("%ModifierNameLabel").Text = source.ToString();
         SourceResource.ResourceName = SourceResource.GetType().Name; // 確保 ResourceName 有值，方便後續使用
     }
 }
