@@ -6,7 +6,7 @@ public partial class ModifierCard : PanelContainer
     // This
     public ModifierResource SourceResource;
 
-    public bool IsActive = true;
+    public bool IsSelected = false;
 
     [Signal]
     public delegate void ToggleStatusChangedEventHandler(bool isActive);
@@ -16,19 +16,27 @@ public partial class ModifierCard : PanelContainer
         // 判斷是否為滑鼠左鍵點擊
         if (@event is InputEventMouseButton mb && mb.Pressed && mb.ButtonIndex == MouseButton.Left)
         {
-            ToggleActive();
+            GD.Print($"ModifierCard clicked");
+            EmitSignal(SignalName.ToggleStatusChanged, IsSelected);
         }
     }
 
-    private void ToggleActive()
+    public void SetSelected(bool selected)
     {
-        IsActive = !IsActive;
-
-        // 視覺回饋：變灰或恢復原色
-        Modulate = IsActive ? new Color(1, 1, 1) : new Color(0.3f, 0.3f, 0.3f, 0.7f);
-
-        // 發出訊號
-        EmitSignal(SignalName.ToggleStatusChanged, IsActive);
+        IsSelected = selected;
+        var tween = GetTree().CreateTween().SetParallel(true);
+        if (IsSelected)
+        {
+            // 放大 1.2 倍，並變色（淡淡的藍色高亮）
+            tween.TweenProperty(this, "scale", new Vector2(1.2f, 1.2f), 0.1f);
+            tween.TweenProperty(this, "modulate", new Color(0.8f, 0.9f, 1.0f), 0.1f);
+        }
+        else
+        {
+            // 恢復原狀
+            tween.TweenProperty(this, "scale", new Vector2(1.0f, 1.0f), 0.1f);
+            tween.TweenProperty(this, "modulate", new Color(1, 1, 1), 0.1f);
+        }
     }
 
     // Called when the node enters the scene tree for the first time.

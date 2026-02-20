@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Godot;
 using Godot.Collections;
@@ -16,18 +17,189 @@ public enum Phase
 
 public partial class Main : Control
 {
-    // 使用 [Export] 讓你在編輯器介面就能直接拖放節點引用，減少 GetNode 的硬編碼
+    [Export]
+    public Label LevelInfo;
+    private int _target = 21;
+    private int _maxAttempts = 3;
+    private int _currentAttempt = 0;
+
+    public void UpdateLevelInfoUI()
+    {
+        LevelInfo.Text = $"Target: {_target} | Attempts: {_currentAttempt} / {_maxAttempts}";
+    }
+
+    [Export]
+    public GridContainer PlayerDiceContainer;
+    private int _MaxInitialDice = 4;
+    private int _MaxSelectable = 4;
+    private List<Dice> _selectedDices = [];
+
+    public void InitializePlayerDice()
+    {
+        for (int i = 0; i < _MaxInitialDice; i++)
+        {
+            Dice diceUI = DiceScene.Instantiate<Dice>();
+            PlayerDiceContainer.AddChild(diceUI);
+            diceUI.SetValue(1);
+            diceUI.DiceSelected += isSelected => OnDiceSelected(diceUI, isSelected);
+        }
+    }
+
+    private void OnDiceSelected(Dice clickedDice, bool isSelected)
+    {
+        // Add or remove the clicked dice from the selected list based on its new state
+        if (isSelected)
+        {
+            if (_selectedDices.Count >= _MaxSelectable)
+            {
+                // FIFO
+                var removedDice = _selectedDices[0];
+                removedDice.SetSelected(false);
+                _selectedDices.RemoveAt(0);
+            }
+            _selectedDices.Add(clickedDice);
+        }
+        else
+        {
+            _selectedDices.Remove(clickedDice);
+        }
+        UpdateRollButtonUI();
+    }
+
+    private void _DisableRollButton()
+    {
+        RollButton.Disabled = true;
+    }
+
+    private void _EnableRollButton()
+    {
+        RollButton.Disabled = false;
+    }
+
+    [Export]
+    public Button RollButton;
+
+    private void UpdateRollButtonUI()
+    {
+        if (_selectedDices.Count < _MaxSelectable)
+        {
+            _DisableRollButton();
+        }
+        else
+        {
+            _EnableRollButton();
+        }
+    }
+
+    private void OnRollButtonPressed()
+    {
+        // update the UI to show the rolled dice results
+        // A. 清除舊的骰子
+        foreach (var d in _resultedDices)
+            d.QueueFree();
+        _resultedDices.Clear();
+
+        int total = 0;
+        for (int i = 0; i < _selectedDices.Count; i++)
+        {
+            // 擲骰
+            int val = _random.Next(1, 7);
+            // var d = _selectedDices[i].Duplicate();
+            Dice d = DiceScene.Instantiate<Dice>();
+            DiceResultContainer.AddChild(d);
+            _resultedDices.Add(d);
+            d.SetValue(val);
+            total += val;
+        }
+
+        // C. 判斷是否為有效組合
+        if (!IsValidCombination(_resultedDices))
+        {
+            ResultLabel.Text = "無有效組合，請重新選擇骰子再投擲。";
+            _EnableRollButton(); // 允許再擲
+            return;
+        }
+
+        HighlightConditionAndScoreDices(_resultedDices);
+        _EnableRollButton();
+        // _DisableRollButton();
+    }
+
+    private bool IsValidCombination(List<Dice> dices)
+    {
+        var seen = new HashSet<int>();
+        foreach (var d in dices)
+        {
+            if (!seen.Add(d.OriginalValue))
+                return true; // 出現重複
+        }
+        return false;
+    }
+
+    // 找到相同兩顆作為條件骰，其餘為得分骰
+    private void HighlightConditionAndScoreDices(List<Dice> dices)
+    {
+        // 統計出現次數
+        var counts = new System.Collections.Generic.Dictionary<int, int>();
+        foreach (var d in dices)
+        {
+            counts.TryGetValue(d.OriginalValue, out int c);
+            counts[d.OriginalValue] = c + 1;
+        }
+
+        // 找到第一個出現次數 >= 2 的點數
+        int conditionValue = -1;
+        foreach (var kv in counts)
+        {
+            if (kv.Value >= 2)
+            {
+                conditionValue = kv.Key;
+                break;
+            }
+        }
+
+        int scoreSum = 0;
+        int usedCondition = 0;
+
+        // 視覺標示：條件骰灰色，得分骰醒目色
+        foreach (var d in dices)
+        {
+            if (d.OriginalValue == conditionValue && usedCondition < 2)
+            {
+                d.Modulate = new Color(0.6f, 0.6f, 0.6f); // 條件骰：灰色
+                usedCondition++;
+            }
+            else
+            {
+                d.Modulate = new Color(1.0f, 0.9f, 0.2f); // 得分骰：醒目色
+                scoreSum += d.OriginalValue;
+            }
+        }
+
+        ResultLabel.Text = $"得分骰總和：{scoreSum}";
+    }
+
+    [Export]
+    public GridContainer DiceResultContainer;
+    private List<Dice> _resultedDices = [];
+
+    private void StartNewLevel()
+    {
+        UpdateLevelInfoUI();
+        InitializePlayerDice();
+        UpdateRollButtonUI();
+        RollButton.Pressed += OnRollButtonPressed;
+    }
+
+    //
+    // DEPRECATED
+    //
+
     [Export]
     public Label ScoreLabel;
 
     [Export]
     public Label ResultLabel;
-
-    [Export]
-    public Button RollButton;
-
-    [Export]
-    public Button CommitButton;
 
     [Export]
     public Array<ModifierResource> ActiveModifiers = [];
@@ -41,8 +213,6 @@ public partial class Main : Control
     //
     // Dice objects
     //
-    [Export]
-    public GridContainer DiceContainer;
 
     [Export]
     public PackedScene DiceScene; // 骰子場景的模板
@@ -59,10 +229,6 @@ public partial class Main : Control
     //
     private static readonly int initHP = 50;
 
-    // Enemy Info
-    [Export]
-    public ProgressBar EnemyHealthBar;
-
     [Export]
     public Label EnemyWeaknessLabel;
 
@@ -71,8 +237,7 @@ public partial class Main : Control
     private int _weaknessValue = 0; // 這個值在每一關重置，或者根據關卡難度增加
 
     // Player Info
-    [Export]
-    public ProgressBar PlayerHealthBar;
+
     private int _maxPlayerHP = initHP;
     private int _currentPlayerHP = initHP;
 
@@ -87,29 +252,13 @@ public partial class Main : Control
     [Export]
     public Array<ModifierResource> PossibleModifiers = []; // NOTE: 在 Inspector 裡把所有你寫好的 Resource 丟進這個陣列
 
+    // Player Thinking Info
+    private Dice _selectedDice = null;
+
+    //
     private Random _random = new();
 
     private Phase _currentState;
-
-    private void _DisableRollButton()
-    {
-        RollButton.Disabled = true;
-    }
-
-    private void _EnableRollButton()
-    {
-        RollButton.Disabled = false;
-    }
-
-    private void _DisableCommitButton()
-    {
-        CommitButton.Disabled = true;
-    }
-
-    private void _EnableCommitButton()
-    {
-        CommitButton.Disabled = false;
-    }
 
     private void ChangePhase(Phase newState)
     {
@@ -119,19 +268,15 @@ public partial class Main : Control
         {
             case Phase.PlayerTurn:
                 _EnableRollButton();
-                _DisableCommitButton();
                 ResultLabel.Text = "Your Turn! Dice the Roll!";
                 PreviewDamageLabel.Text = "";
                 break;
 
             case Phase.Processing:
                 _DisableRollButton();
-                _DisableCommitButton();
                 break;
             case Phase.PlayerThinking:
                 _DisableRollButton();
-                _EnableCommitButton();
-                ResultLabel.Text = "Choose your modifiers and commit your action.";
                 break;
             case Phase.EnemyTurn:
                 _DisableRollButton();
@@ -140,7 +285,6 @@ public partial class Main : Control
             case Phase.Victory:
                 ResultLabel.Text = "Victory! You defeated the enemy!";
                 _DisableRollButton();
-                _DisableCommitButton();
                 // 這裡可以播放一段勝利的動畫或顯示下一關按鈕
                 break;
             case Phase.Defeat:
@@ -150,81 +294,6 @@ public partial class Main : Control
                 break;
         }
     }
-
-    private void StartNewLevel()
-    {
-        // Initialize HP and weakness value for the new level
-        // Initialize enemy/player health bar
-        EnemyHealthBar.MaxValue = _maxEnemyHP;
-        EnemyHealthBar.Value = _currentEnemyHP;
-        PlayerHealthBar.MaxValue = _maxPlayerHP;
-        PlayerHealthBar.Value = _currentPlayerHP;
-        _weaknessValue = _random.Next(_maxEnemyHP / 4, _maxEnemyHP / 2); // 隨機設定弱點值，這會影響玩家的策略選擇
-        EnemyWeaknessLabel.Text = $"Enemy Weakness: {_weaknessValue}";
-
-        InitializePlayerSkills();
-        // Update the UI to reflect the new level's stats
-        UpdateUI();
-
-        // Change the battle state to PlayerTurn to start the new level
-        // 這裡就是「信號 (Signal)」的串接
-        // 在 C# 中，我們通常使用 += 語法來訂閱信號（事件）
-        RollButton.Pressed += OnRollButtonPressed;
-        CommitButton.Pressed += CommitPlayerAction;
-        ChangePhase(Phase.PlayerTurn);
-    }
-
-    private void OnRollButtonPressed()
-    {
-        ChangePhase(Phase.Processing);
-        // update the UI to show the rolled dice results
-        // A. 清除舊的骰子
-        foreach (var d in _activeDices)
-            d.QueueFree();
-        _activeDices.Clear();
-        // B. 生成多顆骰子
-        for (int i = 0; i < 5; i++)
-        {
-            // 擲骰
-            int val = _random.Next(1, 7);
-
-            // C. 實例化骰子 UI
-            Dice diceUI = DiceScene.Instantiate<Dice>();
-            DiceContainer.AddChild(diceUI);
-            _activeDices.Add(diceUI);
-            // D. 更新骰子視覺
-            diceUI.SetValue(val);
-        }
-        UpdatePreviewDamage();
-        ChangePhase(Phase.PlayerThinking);
-    }
-
-    private void CommitPlayerAction()
-    {
-        // NOTE: Come from player click the Commit button
-        ChangePhase(Phase.Processing);
-
-        // Apply the final dice results to the enemy's HP
-        int totalDamage = 0;
-        foreach (var d in _activeDices)
-        {
-            totalDamage += d.CurrentValue; // 假設 Dice 類別有一個 CurrentValue 屬性來存儲當前的骰子點數
-        }
-        // Check if the enemy is defeated, if so, change state to Victory
-        var isDead = ProcessDamage(totalDamage);
-        UpdateUI();
-        // E. 進入敵人回合
-        if (isDead)
-        {
-            ChangePhase(Phase.Victory);
-        }
-        else
-        {
-            ChangePhase(Phase.PlayerTurn);
-        }
-    }
-
-    private void EndLevel() { }
 
     // 當場景載入完成時調用 (類似於 Start 或 Initialize)
     public override void _Ready()
@@ -240,7 +309,7 @@ public partial class Main : Control
         foreach (var node in PlayerSkillsContainer.GetChildren())
         {
             count++;
-            if (node is ModifierCard card && card.IsActive)
+            if (node is ModifierCard card && card.IsSelected)
             {
                 ActiveModifiers.Add(card.SourceResource);
             }
@@ -251,27 +320,9 @@ public partial class Main : Control
         );
     }
 
-    private int rollDice()
-    {
-        // 1. 執行核心邏輯
-        int roll = _random.Next(1, 7);
-        int modifiedRoll = roll;
-        foreach (var modifier in ActiveModifiers)
-        {
-            if (modifier != null)
-            {
-                int before = modifiedRoll;
-                modifiedRoll = modifier.Apply(modifiedRoll);
-                GD.Print($"[Pipeline] {modifier.GetType().Name}: {before} -> {modifiedRoll}");
-            }
-        }
-        return modifiedRoll;
-    }
-
     private bool ProcessDamage(int totalDamage)
     {
         _currentEnemyHP -= totalDamage;
-        GetTree().CreateTween().TweenProperty(EnemyHealthBar, "value", _currentEnemyHP, 0.5f);
         if (_currentEnemyHP <= 0)
         {
             _currentEnemyHP = 0;
@@ -300,7 +351,7 @@ public partial class Main : Control
         int totalDamage = 0;
         foreach (var d in _activeDices)
         {
-            totalDamage += d.CurrentValue; // 假設 Dice 類別有一個 CurrentValue 屬性來存儲當前的骰子點數
+            totalDamage += d.GetModifiedValue(); // 假設 Dice 類別有一個 OriginalValue 屬性來存儲當前的骰子點數
         }
         PreviewDamageLabel.Text = $"Preview Damage: {totalDamage}";
     }
@@ -319,7 +370,6 @@ public partial class Main : Control
         _currentPlayerHP -= enemyDamage;
 
         // 2. 更新 UI
-        GetTree().CreateTween().TweenProperty(PlayerHealthBar, "value", _currentPlayerHP, 0.3f);
         GD.Print($"[Battle] Player took {enemyDamage} damage. Current HP: {_currentPlayerHP}");
 
         // 3. 檢查玩家是否死亡 (Defeat)
@@ -336,25 +386,6 @@ public partial class Main : Control
     }
 
     // End of a battle round
-
-    private void InitializePlayerSkills()
-    {
-        var plusOneCard = ModifierCardScene.Instantiate<ModifierCard>();
-        plusOneCard.LinkModifierResource(new PlusOneModifier());
-        PlayerSkillsContainer.AddChild(plusOneCard);
-
-        var plusThreeCard = ModifierCardScene.Instantiate<ModifierCard>();
-        plusThreeCard.LinkModifierResource(new PlusThreeModifier());
-        PlayerSkillsContainer.AddChild(plusThreeCard);
-
-        var doubleCard = ModifierCardScene.Instantiate<ModifierCard>();
-        doubleCard.LinkModifierResource(new DoubleModifier());
-        PlayerSkillsContainer.AddChild(doubleCard);
-
-        var tripleCard = ModifierCardScene.Instantiate<ModifierCard>();
-        tripleCard.LinkModifierResource(new TripleModifier());
-        PlayerSkillsContainer.AddChild(tripleCard);
-    }
 
     private void ShowRewardOptions()
     {
@@ -414,7 +445,6 @@ public partial class Main : Control
     private void ResetBattle()
     {
         _currentEnemyHP = _maxEnemyHP;
-        EnemyHealthBar.Value = _currentEnemyHP;
 
         // 清除 UI 並恢復狀態
         PipelineContainer.Modulate = new Color(1, 1, 1);

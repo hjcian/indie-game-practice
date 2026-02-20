@@ -3,15 +3,75 @@ using Godot;
 
 public partial class Dice : PanelContainer
 {
-    // [Export]
-    // public Label NumberLabel;
     private Label _numberLabel;
-    public int CurrentValue { get; private set; }
+    public int OriginalValue { get; private set; }
+    private bool _isSelected = false;
+
+    private ModifierCard _appliedModifier = null;
+
+    // Called when the node enters the scene tree for the first time.
+    public override void _Ready()
+    {
+        // % 符號代表搜尋場景內的唯一名稱
+        _numberLabel = GetNode<Label>("%NumberLabel");
+
+        // // 1.4: Juice: add a little bounce animation when the dice show up
+        // GetTree().ProcessFrame += OnWaitFrameFinished;
+
+        PivotOffset = Size / 2;
+        GuiInput += OnGuiInput;
+    }
+
+    // 記得宣告信號，讓 Main 知道是哪顆骰子被選了
+    [Signal]
+    public delegate void DiceSelectedEventHandler(bool isSelected);
+
+    private void OnGuiInput(InputEvent @event)
+    {
+        if (
+            @event is InputEventMouseButton mouseEvent
+            && mouseEvent.Pressed
+            && mouseEvent.ButtonIndex == MouseButton.Left
+        )
+        {
+            SetSelected(!_isSelected);
+            // 發出訊號給 Main (我們待會處理)
+            EmitSignal(SignalName.DiceSelected, _isSelected);
+        }
+    }
+
+    public void SetSelected(bool selected)
+    {
+        _isSelected = selected;
+
+        // 建立動畫
+        var tween = GetTree().CreateTween().SetParallel(true);
+
+        if (_isSelected)
+        {
+            // 放大 1.2 倍，並變色（淡淡的藍色高亮）
+            tween.TweenProperty(this, "scale", new Vector2(1.2f, 1.2f), 0.1f);
+            tween.TweenProperty(this, "modulate", new Color(0.8f, 0.9f, 1.0f), 0.1f);
+        }
+        else
+        {
+            // 恢復原狀
+            tween.TweenProperty(this, "scale", new Vector2(1.0f, 1.0f), 0.1f);
+            tween.TweenProperty(this, "modulate", new Color(1, 1, 1), 0.1f);
+            // Unselect the modifier card if the dice is unselected
+            if (_appliedModifier != null)
+            {
+                _appliedModifier.SetSelected(false);
+                _appliedModifier = null;
+                SetUI();
+            }
+        }
+    }
 
     public void SetValue(int value)
     {
-        CurrentValue = value;
-        _numberLabel.Text = value.ToString();
+        OriginalValue = value;
+        SetUI();
 
         // 1.4: Juice it up with random colors
         // 隨機顏色：給骰子一點色彩
@@ -20,37 +80,67 @@ public partial class Dice : PanelContainer
         SelfModulate = Color.FromHsv(randomHue, 0.6f, 0.9f);
     }
 
-    // Called when the node enters the scene tree for the first time.
-    public override void _Ready()
-    {
-        // % 符號代表搜尋場景內的唯一名稱
-        _numberLabel = GetNode<Label>("%NumberLabel");
+    // private void OnWaitFrameFinished()
+    // {
+    //     GetTree().ProcessFrame -= OnWaitFrameFinished;
+    //     Control wrapper = GetNode<Control>("%AnimationWrapper");
 
-        // 1.4: Juice: add a little bounce animation when the dice show up
-        GetTree().ProcessFrame += OnWaitFrameFinished;
-    }
+    //     // 現在 wrapper 的 Size 是由 Dice (PanelContainer) 撐開的
+    //     wrapper.PivotOffset = wrapper.Size / 2;
+    //     wrapper.Scale = Vector2.Zero;
 
-    private void OnWaitFrameFinished()
-    {
-        GetTree().ProcessFrame -= OnWaitFrameFinished;
-        Control wrapper = GetNode<Control>("%AnimationWrapper");
+    //     Tween tween = GetTree().CreateTween().SetParallel(true);
 
-        // 現在 wrapper 的 Size 是由 Dice (PanelContainer) 撐開的
-        wrapper.PivotOffset = wrapper.Size / 2;
-        wrapper.Scale = Vector2.Zero;
+    //     // 縮放動畫
+    //     tween
+    //         .TweenProperty(wrapper, "scale", Vector2.One, 0.4f)
+    //         .SetTrans(Tween.TransitionType.Back)
+    //         .SetEase(Tween.EaseType.Out);
 
-        Tween tween = GetTree().CreateTween().SetParallel(true);
-
-        // 縮放動畫
-        tween
-            .TweenProperty(wrapper, "scale", Vector2.One, 0.4f)
-            .SetTrans(Tween.TransitionType.Back)
-            .SetEase(Tween.EaseType.Out);
-
-        // 淡入動畫
-        tween.TweenProperty(wrapper, "modulate:a", 1.0f, 0.2f);
-    }
+    //     // 淡入動畫
+    //     tween.TweenProperty(wrapper, "modulate:a", 1.0f, 0.2f);
+    // }
 
     // Called every frame. 'delta' is the elapsed time since the previous frame.
     public override void _Process(double delta) { }
+
+    private void SetUI()
+    {
+        if (_appliedModifier == null)
+        {
+            _numberLabel.Text = OriginalValue.ToString();
+        }
+        else
+        {
+            // format: "Modified (Original)"
+            _numberLabel.Text = $"{GetModifiedValue()} ({OriginalValue})";
+        }
+    }
+
+    public void ApplyModifier(ModifierCard modifierCard)
+    {
+        _appliedModifier?.SetSelected(false);
+        _appliedModifier = modifierCard;
+        _appliedModifier.SetSelected(true);
+        SetUI();
+    }
+
+    public void UnbindModifier(ModifierCard modifierCard)
+    {
+        modifierCard.SetSelected(false);
+        if (_appliedModifier == modifierCard)
+        {
+            _appliedModifier = null;
+        }
+        SetUI();
+    }
+
+    public int GetModifiedValue()
+    {
+        if (_appliedModifier == null)
+        {
+            return OriginalValue;
+        }
+        return _appliedModifier.SourceResource.Apply(OriginalValue);
+    }
 }
