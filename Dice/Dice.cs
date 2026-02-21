@@ -143,4 +143,17 @@ public partial class Dice : PanelContainer
         }
         return _appliedModifier.SourceResource.Apply(OriginalValue);
     }
+
+    //
+    // UI helper
+    //
+    public void SetToConditionType()
+    {
+        Modulate = new Color(0.6f, 0.6f, 0.6f); // 條件骰：灰色
+    }
+
+    public void SetToScoreType()
+    {
+        Modulate = new Color(1.0f, 0.9f, 0.2f); // 得分骰：醒目色
+    }
 }

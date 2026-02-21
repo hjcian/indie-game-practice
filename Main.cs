@@ -19,13 +19,24 @@ public partial class Main : Control
 {
     [Export]
     public Label LevelInfo;
-    private int _target = 21;
+
+    [Export]
+    public Label RoundInfo;
+
+    private int _currentLevel = 1;
+    private int _goal = 21;
     private int _maxAttempts = 3;
     private int _currentAttempt = 0;
+    private int _accumulatedScore = 0;
 
     public void UpdateLevelInfoUI()
     {
-        LevelInfo.Text = $"Target: {_target} | Attempts: {_currentAttempt} / {_maxAttempts}";
+        LevelInfo.Text = $"Level {_currentLevel} | Goal: {_goal}";
+        int remaining = _goal - _accumulatedScore;
+        if (remaining < 0)
+            remaining = 0;
+        RoundInfo.Text =
+            $"Current/Left: {_accumulatedScore}/{remaining} | Attempts: {_currentAttempt} / {_maxAttempts}";
     }
 
     [Export]
@@ -91,6 +102,16 @@ public partial class Main : Control
         }
     }
 
+    [Export]
+    public GridContainer DiceResultContainer;
+    private List<Dice> _resultedDices = [];
+
+    [Export]
+    public Label ResultLabel;
+
+    [Export]
+    public Label LevelResultLabel;
+
     private void OnRollButtonPressed()
     {
         // update the UI to show the rolled dice results
@@ -120,9 +141,40 @@ public partial class Main : Control
             return;
         }
 
-        HighlightConditionAndScoreDices(_resultedDices);
+        int score = HighlightConditionAndScoreDices(_resultedDices);
+        ResultLabel.Text = $"得分骰總和：{score}";
+
+        CheckLevelFinish(score);
         _EnableRollButton();
         // _DisableRollButton();
+    }
+
+    private void CheckLevelFinish(int score)
+    {
+        _currentAttempt++;
+        _accumulatedScore += score;
+
+        if (_accumulatedScore >= _goal)
+        {
+            LevelResultLabel.Text = "成功達成目標！進入下一關！";
+            // 這裡可以增加難度，例如提高目標分數、增加骰子數量等
+            _goal += 5; // 每關增加5點目標分數
+            _currentAttempt = 0;
+            _accumulatedScore = 0;
+            _currentLevel++;
+        }
+        else if (_currentAttempt >= _maxAttempts)
+        {
+            LevelResultLabel.Text = "挑戰失敗，請再試一次！";
+            // 可以選擇重置當前關卡或是降低難度
+            _currentAttempt = 0;
+            _accumulatedScore = 0;
+        }
+        else
+        {
+            LevelResultLabel.Text = "繼續挑戰，選擇骰子再投擲！";
+        }
+        UpdateLevelInfoUI();
     }
 
     private bool IsValidCombination(List<Dice> dices)
@@ -137,7 +189,7 @@ public partial class Main : Control
     }
 
     // 找到相同兩顆作為條件骰，其餘為得分骰
-    private void HighlightConditionAndScoreDices(List<Dice> dices)
+    private int HighlightConditionAndScoreDices(List<Dice> dices)
     {
         // 統計出現次數
         var counts = new System.Collections.Generic.Dictionary<int, int>();
@@ -147,14 +199,13 @@ public partial class Main : Control
             counts[d.OriginalValue] = c + 1;
         }
 
-        // 找到第一個出現次數 >= 2 的點數
+        // 找到「最小」且出現次數 >= 2 的點數作為條件骰
         int conditionValue = -1;
         foreach (var kv in counts)
         {
-            if (kv.Value >= 2)
+            if (kv.Value >= 2 && (conditionValue == -1 || kv.Key < conditionValue))
             {
                 conditionValue = kv.Key;
-                break;
             }
         }
 
@@ -166,22 +217,17 @@ public partial class Main : Control
         {
             if (d.OriginalValue == conditionValue && usedCondition < 2)
             {
-                d.Modulate = new Color(0.6f, 0.6f, 0.6f); // 條件骰：灰色
+                d.SetToConditionType();
                 usedCondition++;
             }
             else
             {
-                d.Modulate = new Color(1.0f, 0.9f, 0.2f); // 得分骰：醒目色
+                d.SetToScoreType();
                 scoreSum += d.OriginalValue;
             }
         }
-
-        ResultLabel.Text = $"得分骰總和：{scoreSum}";
+        return scoreSum;
     }
-
-    [Export]
-    public GridContainer DiceResultContainer;
-    private List<Dice> _resultedDices = [];
 
     private void StartNewLevel()
     {
@@ -191,15 +237,17 @@ public partial class Main : Control
         RollButton.Pressed += OnRollButtonPressed;
     }
 
+    // 當場景載入完成時調用 (類似於 Start 或 Initialize)
+    public override void _Ready()
+    {
+        StartNewLevel();
+    }
+
+    // ========================================================================================
     //
     // DEPRECATED
     //
-
-    [Export]
-    public Label ScoreLabel;
-
-    [Export]
-    public Label ResultLabel;
+    //
 
     [Export]
     public Array<ModifierResource> ActiveModifiers = [];
@@ -295,12 +343,6 @@ public partial class Main : Control
         }
     }
 
-    // 當場景載入完成時調用 (類似於 Start 或 Initialize)
-    public override void _Ready()
-    {
-        StartNewLevel();
-    }
-
     private void SyncActiveSkills()
     {
         ActiveModifiers.Clear();
@@ -333,17 +375,17 @@ public partial class Main : Control
 
     private void UpdateUI()
     {
-        ScoreLabel.Text = $"Current HP: {_currentEnemyHP} / {_maxEnemyHP}";
+        LevelResultLabel.Text = $"Current HP: {_currentEnemyHP} / {_maxEnemyHP}";
 
         // 防止重複執行動畫，先建立新的 Tween
         Tween tween = GetTree().CreateTween();
 
         // 修正 Pivot 以便從中心縮放
-        ScoreLabel.PivotOffset = ScoreLabel.Size / 2;
+        LevelResultLabel.PivotOffset = LevelResultLabel.Size / 2;
 
         // 縮放動畫：放大 -> 回彈
-        tween.TweenProperty(ScoreLabel, "scale", new Vector2(1.2f, 1.2f), 0.05f); // 放大 from 1.0 to 1.2
-        tween.TweenProperty(ScoreLabel, "scale", new Vector2(1.0f, 1.0f), 0.1f); // 縮回 to 1.0
+        tween.TweenProperty(LevelResultLabel, "scale", new Vector2(1.2f, 1.2f), 0.05f); // 放大 from 1.0 to 1.2
+        tween.TweenProperty(LevelResultLabel, "scale", new Vector2(1.0f, 1.0f), 0.1f); // 縮回 to 1.0
     }
 
     private void UpdatePreviewDamage()
