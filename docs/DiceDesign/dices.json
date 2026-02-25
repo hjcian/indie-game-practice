@@ -1,0 +1,125 @@
+{
+    "README": "這份文件放置所有骰子的設計。",
+    "dices": [
+        {
+            "category": "Basic",
+            "name": "Add 1",
+            "description": {
+                "en": "After this dice is rolled, add 1 to this dice.",
+                "zh-TW": "擲出此骰子後，點數 +1。"
+            }
+        },
+        {
+            "category": "Basic",
+            "name": "Add 2",
+            "description": {
+                "en": "After this dice is rolled, add 2 to this dice.",
+                "zh-TW": "擲出此骰子後，點數 +2。"
+            }
+        },
+        {
+            "category": "Basic",
+            "name": "Add 3",
+            "description": {
+                "en": "After this dice is rolled, add 3 to this dice.",
+                "zh-TW": "擲出此骰子後，點數 +3。"
+            }
+        },
+        {
+            "category": "Probability Skew",
+            "name": "Skew 1: x2",
+            "description": {
+                "en": "Number 1 has double chance to appear.",
+                "zh-TW": "數字 1 出現的機率提升為兩倍。"
+            }
+        },
+        {
+            "category": "Probability Skew",
+            "name": "Skew 2: x2",
+            "description": {
+                "en": "Number 2 has double chance to appear.",
+                "zh-TW": "數字 2 出現的機率提升為兩倍。"
+            }
+        },
+        {
+            "category": "Probability Skew",
+            "name": "Skew 3: x2",
+            "description": {
+                "en": "Number 3 has double chance to appear.",
+                "zh-TW": "數字 3 出現的機率提升為兩倍。"
+            }
+        },
+        {
+            "category": "Probability Skew",
+            "name": "Skew 4: x2",
+            "description": {
+                "en": "Number 4 has double chance to appear.",
+                "zh-TW": "數字 4 出現的機率提升為兩倍。"
+            }
+        },
+        {
+            "category": "Probability Skew",
+            "name": "Skew 5: x2",
+            "description": {
+                "en": "Number 5 has double chance to appear.",
+                "zh-TW": "數字 5 出現的機率提升為兩倍。"
+            }
+        },
+        {
+            "category": "Probability Skew",
+            "name": "Skew 6: x2",
+            "description": {
+                "en": "Number 6 has double chance to appear.",
+                "zh-TW": "數字 6 出現的機率提升為兩倍。"
+            }
+        },
+        {
+            "category": "Probability Skew",
+            "name": "Skew 1: x3",
+            "description": {
+                "en": "Number 1 has triple chance to appear.",
+                "zh-TW": "數字 1 出現的機率提升為三倍。"
+            }
+        },
+        {
+            "category": "Probability Skew",
+            "name": "Skew 2: x3",
+            "description": {
+                "en": "Number 2 has triple chance to appear.",
+                "zh-TW": "數字 2 出現的機率提升為三倍。"
+            }
+        },
+        {
+            "category": "Probability Skew",
+            "name": "Skew 3: x3",
+            "description": {
+                "en": "Number 3 has triple chance to appear.",
+                "zh-TW": "數字 3 出現的機率提升為三倍。"
+            }
+        },
+        {
+            "category": "Probability Skew",
+            "name": "Skew 4: x3",
+            "description": {
+                "en": "Number 4 has triple chance to appear.",
+                "zh-TW": "數字 4 出現的機率提升為三倍。"
+            }
+        },
+        {
+            "category": "Probability Skew",
+            "name": "Skew 5: x3",
+            "description": {
+                "en": "Number 5 has triple chance to appear.",
+                "zh-TW": "數字 5 出現的機率提升為三倍。"
+            }
+        },
+        {
+            "category": "Probability Skew",
+            "name": "Skew 6: x3",
+            "description": {
+                "en": "Number 6 has triple chance to appear.",
+                "zh-TW": "數字 6 出現的機率提升為三倍。"
+            }
+        }
+    ]
+}

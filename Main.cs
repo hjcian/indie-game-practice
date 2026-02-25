@@ -246,8 +246,10 @@ public partial class Main : Control
     [Export]
     public RewardWindowManager RewardWindowManager;
 
-    private void OnRewardConfirmed(int selectedDiceValue)
+    private void OnRewardConfirmed(DiceData selectedDice)
     {
+        GD.Print($"[Main] 玩家確認選擇: {selectedDice.Name}");
+
         // 進入下一關
         _goal += 5; // 每關增加5點目標分數
         _currentAttempt = 0;

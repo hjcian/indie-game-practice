@@ -2,9 +2,9 @@ using Godot;
 
 public partial class DiceRewardCard : PanelContainer
 {
-    private Label _diceValueLabel;
-    private Label _diceInfoLabel;
-    private int _diceValue;
+    private Label _diceNameLabel;
+    private Label _diceDescLabel;
+    private DiceData _diceData;
     private bool _isSelected = false;
 
     // 信號：當卡片被點選時發出
@@ -13,8 +13,8 @@ public partial class DiceRewardCard : PanelContainer
 
     public override void _Ready()
     {
-        _diceValueLabel = GetNode<Label>("%DiceValueLabel");
-        _diceInfoLabel = GetNode<Label>("%DiceInfoLabel");
+        _diceNameLabel = GetNode<Label>("%DiceNameLabel");
+        _diceDescLabel = GetNode<Label>("%DiceDescLabel");
 
         GuiInput += OnGuiInput;
         PivotOffset = Size / 2;
@@ -33,25 +33,25 @@ public partial class DiceRewardCard : PanelContainer
         }
     }
 
-    public void SetDiceValue(int value)
+    public void SetDiceData(DiceData data)
     {
-        _diceValue = value;
+        _diceData = data;
         // 確保標籤已初始化（_Ready 可能還沒執行）
-        if (_diceValueLabel == null)
+        if (_diceNameLabel == null)
         {
-            _diceValueLabel = GetNode<Label>("%DiceValueLabel");
+            _diceNameLabel = GetNode<Label>("%DiceNameLabel");
         }
-        if (_diceInfoLabel == null)
+        if (_diceDescLabel == null)
         {
-            _diceInfoLabel = GetNode<Label>("%DiceInfoLabel");
+            _diceDescLabel = GetNode<Label>("%DiceInfoLabel");
         }
-        _diceValueLabel.Text = value.ToString();
+        _diceNameLabel.Text = data.Name;
         UpdateInfo();
     }
 
-    public int GetDiceValue()
+    public DiceData GetDiceData()
     {
-        return _diceValue;
+        return _diceData;
     }
 
     public void SetSelected(bool selected)
@@ -77,10 +77,9 @@ public partial class DiceRewardCard : PanelContainer
         return _isSelected;
     }
 
-    // 更新骰子的額外資訊（基本能力等）
-    // TODO: 後續根據骰子類型補充詳細資訊
+    // 更新骰子的額外資訊（使用 zh-TW 描述）
     private void UpdateInfo()
     {
-        _diceInfoLabel.Text = $"Value: {_diceValue}\n\n[骰子能力資訊待補充]";
+        _diceDescLabel.Text = _diceData.DescriptionZhTw;
     }
 }

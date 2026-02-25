@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 
 public partial class RewardWindowManager : Control
@@ -20,10 +21,9 @@ public partial class RewardWindowManager : Control
     private Random _random = new();
 
     /// <summary>
-    /// 信號：當玩家確認獎勵後觸發，傳遞選中的骰子值
+    /// 當玩家確認獎勵後觸發，傳遞選中的 DiceData
     /// </summary>
-    [Signal]
-    public delegate void RewardConfirmedEventHandler(int selectedDiceValue);
+    public event Action<DiceData> RewardConfirmed;
 
     public override void _Ready()
     {
@@ -46,20 +46,17 @@ public partial class RewardWindowManager : Control
 
         _selectedRewardCard = null;
 
-        // 隨機生成三個骰子值 (1-6)
-        var rewardDiceValues = new int[3];
-        for (int i = 0; i < 3; i++)
-        {
-            rewardDiceValues[i] = _random.Next(1, 7);
-        }
+        // 從 DiceRegistry 隨機挑選三個（不重複）
+        var pool = DiceRegistry.All.ToList();
+        pool.Sort((_, _) => _random.Next(-1, 2)); // 洗牌
+        var selected = pool.Take(3).ToList();
 
-        // 為每個骰子值建立奖励卡片並顯示
-        for (int i = 0; i < 3; i++)
+        // 為每個 DiceData 建立奖励卡片
+        foreach (var diceData in selected)
         {
             var card = DiceRewardCardScene.Instantiate<DiceRewardCard>();
             RandomDiceOptions.AddChild(card);
-            // 先加入場景樹，讓 _Ready() 執行，然後才設置數值
-            card.SetDiceValue(rewardDiceValues[i]);
+            card.SetDiceData(diceData);
 
             // 連結卡片選擇訊號
             card.CardSelected += isSelected => OnRewardCardSelected(card, isSelected);
@@ -68,7 +65,7 @@ public partial class RewardWindowManager : Control
         // 顯示奖励區域
         RandomDiceOptions.Visible = true;
         ConfirmButton.Visible = true;
-        ConfirmButton.Disabled = true; // 預設禁用，直到玩家選擇一個卡片
+        ConfirmButton.Disabled = true;
         InfoLabel.Text = "選擇一顆奖励骰子";
     }
 
@@ -120,13 +117,13 @@ public partial class RewardWindowManager : Control
             return;
         }
 
-        int selectedDiceValue = _selectedRewardCard.GetDiceValue();
-        GD.Print($"[Reward] 玩家選擇了骰子值: {selectedDiceValue}");
+        DiceData selectedDice = _selectedRewardCard.GetDiceData();
+        GD.Print($"[Reward] 玩家選擇了: {selectedDice.Name}");
 
         // 隱藏奖励區域
         HideRewardOptions();
 
-        // 觸發信號通知 Main
-        EmitSignal(SignalName.RewardConfirmed, selectedDiceValue);
+        // 通知 Main
+        RewardConfirmed?.Invoke(selectedDice);
     }
 }
