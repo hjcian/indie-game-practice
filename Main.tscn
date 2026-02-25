@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://bktp1tc3v8dul"]
 
 [ext_resource type="Script" uid="uid://4ycw4qqn3nkf" path="res://Main.cs" id="1_glv2v"]
+[ext_resource type="PackedScene" uid="uid://yxkda7yafsxj" path="res://DiceReward/DiceRewardCard.tscn" id="2_20pc6"]
 [ext_resource type="Resource" uid="uid://2o38wxxcvga5" path="res://Modifier/PlusOneModifier.tres" id="3_cm0pq"]
 [ext_resource type="Resource" uid="uid://ba44ahb7welcl" path="res://Modifier/DoubleModifier.tres" id="3_r0du0"]
 [ext_resource type="PackedScene" uid="uid://dpo48kodd7oft" path="res://ModifierCard/ModifierCard.tscn" id="4_cm0pq"]
@@ -11,7 +12,7 @@
 [ext_resource type="Resource" uid="uid://dyr3o6x4uca86" path="res://Modifier/PlusThreeModifier.tres" id="9_c6i3y"]
 [ext_resource type="Resource" uid="uid://cuunn7whbj4ro" path="res://Modifier/TripleModifier.tres" id="10_c2ibq"]
 
-[node name="Main" type="Control" unique_id=1303641149 node_paths=PackedStringArray("LevelInfo", "RoundInfo", "PlayerDiceContainer", "RollButton", "DiceResultContainer", "ResultLabel", "LevelResultLabel", "PipelineContainer", "EnemyWeaknessLabel", "PreviewDamageLabel", "PlayerSkillsContainer")]
+[node name="Main" type="Control" unique_id=1303641149 node_paths=PackedStringArray("LevelInfo", "RoundInfo", "PlayerDiceContainer", "RollButton", "DiceResultContainer", "ResultLabel", "LevelResultLabel", "RandomDiceOptions", "ConfirmButton", "PreviewDamageLabel", "PlayerSkillsContainer")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -26,12 +27,13 @@ RollButton = NodePath("VBoxContainer/HBoxContainer/RollButton")
 DiceResultContainer = NodePath("VBoxContainer/DiceResultContainer")
 ResultLabel = NodePath("VBoxContainer/ResultLabel")
 LevelResultLabel = NodePath("VBoxContainer/LevelResultLabel")
+RandomDiceOptions = NodePath("VBoxContainer/RandomDiceContainer/Options")
+ConfirmButton = NodePath("VBoxContainer/RandomDiceContainer/ConfirmButton")
+DiceRewardCardScene = ExtResource("2_20pc6")
 DoubleSkill = ExtResource("3_r0du0")
 PlusOneSkill = ExtResource("3_cm0pq")
 DiceScene = ExtResource("4_fos0i")
-PipelineContainer = NodePath("")
 ModifierCardScene = ExtResource("4_cm0pq")
-EnemyWeaknessLabel = NodePath("")
 PreviewDamageLabel = NodePath("VBoxContainer/HBoxContainer/PreviewDamage")
 PlayerSkillsContainer = NodePath("VBoxContainer/PlayerSkills")
 PossibleModifiers = Array[ExtResource("6_wkp8b")]([ExtResource("7_20pc6"), ExtResource("8_5vvyt"), ExtResource("3_cm0pq"), ExtResource("9_c6i3y"), ExtResource("3_r0du0"), ExtResource("10_c2ibq")])
@@ -79,3 +81,13 @@ layout_mode = 2
 
 [node name="PlayerSkills" type="HBoxContainer" parent="VBoxContainer" unique_id=1078642964]
 layout_mode = 2
+
+[node name="RandomDiceContainer" type="VBoxContainer" parent="VBoxContainer" unique_id=1935816019]
+layout_mode = 2
+
+[node name="Options" type="HBoxContainer" parent="VBoxContainer/RandomDiceContainer" unique_id=736813397]
+layout_mode = 2
+
+[node name="ConfirmButton" type="Button" parent="VBoxContainer/RandomDiceContainer" unique_id=1221288399]
+layout_mode = 2
+text = "CONFIRM"
