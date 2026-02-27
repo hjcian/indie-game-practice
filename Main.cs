@@ -41,42 +41,7 @@ public partial class Main : Control
     }
 
     [Export]
-    public GridContainer PlayerDiceContainer;
-    private int _MaxInitialDice = 4;
-    private int _MaxSelectable = 4;
-    private List<Dice> _selectedDices = [];
-
-    public void InitializePlayerDice()
-    {
-        for (int i = 0; i < _MaxInitialDice; i++)
-        {
-            Dice diceUI = DiceScene.Instantiate<Dice>();
-            PlayerDiceContainer.AddChild(diceUI);
-            diceUI.SetValue(1);
-            diceUI.DiceSelected += isSelected => OnDiceSelected(diceUI, isSelected);
-        }
-    }
-
-    private void OnDiceSelected(Dice clickedDice, bool isSelected)
-    {
-        // Add or remove the clicked dice from the selected list based on its new state
-        if (isSelected)
-        {
-            if (_selectedDices.Count >= _MaxSelectable)
-            {
-                // FIFO
-                var removedDice = _selectedDices[0];
-                removedDice.SetSelected(false);
-                _selectedDices.RemoveAt(0);
-            }
-            _selectedDices.Add(clickedDice);
-        }
-        else
-        {
-            _selectedDices.Remove(clickedDice);
-        }
-        UpdateRollButtonUI();
-    }
+    public PlayerDicePocketManager DicePocketManager;
 
     private void _DisableRollButton()
     {
@@ -90,18 +55,6 @@ public partial class Main : Control
 
     [Export]
     public Button RollButton;
-
-    private void UpdateRollButtonUI()
-    {
-        if (_selectedDices.Count < _MaxSelectable)
-        {
-            _DisableRollButton();
-        }
-        else
-        {
-            _EnableRollButton();
-        }
-    }
 
     [Export]
     public GridContainer DiceResultContainer;
@@ -121,17 +74,16 @@ public partial class Main : Control
             d.QueueFree();
         _resultedDices.Clear();
 
-        int total = 0;
-        for (int i = 0; i < _selectedDices.Count; i++)
+        var selectedDices = DicePocketManager.GetSelectedDices();
+
+        for (int i = 0; i < selectedDices.Count; i++)
         {
             // 擲骰
             int val = _random.Next(1, 7);
-            // var d = _selectedDices[i].Duplicate();
             Dice d = DiceScene.Instantiate<Dice>();
             DiceResultContainer.AddChild(d);
             _resultedDices.Add(d);
             d.SetValue(val);
-            total += val;
         }
 
         // C. 判斷是否為有效組合
@@ -147,7 +99,6 @@ public partial class Main : Control
 
         CheckLevelFinish(score);
         _EnableRollButton();
-        // _DisableRollButton();
     }
 
     private void CheckLevelFinish(int score)
@@ -231,8 +182,9 @@ public partial class Main : Control
     private void StartNewLevel()
     {
         UpdateLevelInfoUI();
-        InitializePlayerDice();
-        UpdateRollButtonUI();
+        DicePocketManager.Initialize();
+        RollButton.Disabled = true; // 初始禁用，等待玩家選滿骰子
+        DicePocketManager.SelectionReadyChanged += isReady => RollButton.Disabled = !isReady;
         RollButton.Pressed += OnRollButtonPressed;
         RewardWindowManager.RewardConfirmed += OnRewardConfirmed;
     }

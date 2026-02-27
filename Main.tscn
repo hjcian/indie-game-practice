@@ -11,9 +11,10 @@
 [ext_resource type="Resource" uid="uid://dyr3o6x4uca86" path="res://Modifier/PlusThreeModifier.tres" id="9_c6i3y"]
 [ext_resource type="Resource" uid="uid://cuunn7whbj4ro" path="res://Modifier/TripleModifier.tres" id="10_c2ibq"]
 [ext_resource type="Script" uid="uid://kjoxa4srs8vh" path="res://RewardWindowManager.cs" id="11_20pc6"]
+[ext_resource type="Script" uid="uid://djt2jt6tk0hx" path="res://PlayerDicePocket/PlayerDicePocketManager.cs" id="11_c6i3y"]
 [ext_resource type="PackedScene" uid="uid://yxkda7yafsxj" path="res://DiceRewardCard/DiceRewardCard.tscn" id="12_5vvyt"]
 
-[node name="Main" type="Control" unique_id=1303641149 node_paths=PackedStringArray("LevelInfo", "RoundInfo", "PlayerDiceContainer", "RollButton", "DiceResultContainer", "ResultLabel", "LevelResultLabel", "RewardWindowManager", "PreviewDamageLabel", "PlayerSkillsContainer")]
+[node name="Main" type="Control" unique_id=1303641149 node_paths=PackedStringArray("LevelInfo", "RoundInfo", "DicePocketManager", "RollButton", "DiceResultContainer", "ResultLabel", "LevelResultLabel", "RewardWindowManager", "PreviewDamageLabel", "PlayerSkillsContainer")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -23,7 +24,7 @@ grow_vertical = 2
 script = ExtResource("1_glv2v")
 LevelInfo = NodePath("VBoxContainer/LevelInfoVBox/LevelInfo")
 RoundInfo = NodePath("VBoxContainer/LevelInfoVBox/ScoreInfo")
-PlayerDiceContainer = NodePath("VBoxContainer/PlayerDiceContainer")
+DicePocketManager = NodePath("VBoxContainer/PlayerDicePocketManager")
 RollButton = NodePath("VBoxContainer/HBoxContainer/RollButton")
 DiceResultContainer = NodePath("VBoxContainer/DiceResultContainer")
 ResultLabel = NodePath("VBoxContainer/ResultLabel")
@@ -53,6 +54,11 @@ layout_mode = 2
 
 [node name="ScoreInfo" type="Label" parent="VBoxContainer/LevelInfoVBox" unique_id=1480747760]
 layout_mode = 2
+
+[node name="PlayerDicePocketManager" type="Node" parent="VBoxContainer" unique_id=166295297 node_paths=PackedStringArray("PocketContainer")]
+script = ExtResource("11_c6i3y")
+PocketContainer = NodePath("../PlayerDiceContainer")
+DiceScene = ExtResource("4_fos0i")
 
 [node name="PlayerDiceContainer" type="GridContainer" parent="VBoxContainer" unique_id=421033610]
 layout_mode = 2
