@@ -16,6 +16,12 @@ public abstract class DiceData
     public abstract int Roll();
 
     /// <summary>
+    /// 將骰子能力套用到原始擲骰值，回傳最終結果。
+    /// 預設直接回傳 rawRoll，子類別可覆寫。
+    /// </summary>
+    public virtual int ApplyAbility(int rawRoll) => rawRoll;
+
+    /// <summary>
     /// 從加權面池中隨機抽取一個結果。
     /// 例如 pool = [1,1,2,3,4,5,6] 代表 1 出現機率為 2/7。
     /// </summary>

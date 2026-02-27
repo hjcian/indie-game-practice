@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://dv24t6lh2rbvq"]
+
+[ext_resource type="PackedScene" uid="uid://deyckw5ede84g" path="res://Dice/Dice.tscn" id="1_k0612"]
+[ext_resource type="Script" uid="uid://drqr4u1xu0gv5" path="res://ResultCard/ResultCard.cs" id="1_u2cm4"]
+
+[node name="ResultCard" type="PanelContainer" unique_id=907662454]
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("1_u2cm4")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=183624461]
+layout_mode = 2
+
+[node name="DiceTypeLabel" type="Label" parent="VBoxContainer" unique_id=1057157562]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Dice" parent="VBoxContainer" unique_id=580070206 instance=ExtResource("1_k0612")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ModifiedValueLabel" type="Label" parent="VBoxContainer" unique_id=264166735]
+unique_name_in_owner = true
+layout_mode = 2

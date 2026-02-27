@@ -5,7 +5,6 @@ public partial class Dice : PanelContainer
 {
     private Label _numberLabel;
     public int OriginalValue { get; private set; }
-    public DiceData DiceData { get; private set; }
     private bool _isSelected = false;
 
     private ModifierCard _appliedModifier = null;
@@ -67,11 +66,6 @@ public partial class Dice : PanelContainer
                 SetUI();
             }
         }
-    }
-
-    public void SetDiceData(DiceData data)
-    {
-        DiceData = data;
     }
 
     public void SetValue(int value)

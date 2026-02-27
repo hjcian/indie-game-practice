@@ -58,7 +58,10 @@ public partial class Main : Control
 
     [Export]
     public GridContainer DiceResultContainer;
-    private List<Dice> _resultedDices = [];
+    private List<ResultCard> _resultCards = [];
+
+    [Export]
+    public PackedScene ResultCardScene;
 
     [Export]
     public Label ResultLabel;
@@ -68,34 +71,31 @@ public partial class Main : Control
 
     private void OnRollButtonPressed()
     {
-        // update the UI to show the rolled dice results
         // A. 清除舊的骰子
-        foreach (var d in _resultedDices)
-            d.QueueFree();
-        _resultedDices.Clear();
+        foreach (var rc in _resultCards)
+            rc.QueueFree();
+        _resultCards.Clear();
 
         var selectedDices = DicePocketManager.GetSelectedDices();
 
         for (int i = 0; i < selectedDices.Count; i++)
         {
-            // 擲骰：由 DiceData 自己决定擲骰行為
-            int val = selectedDices[i].Roll();
-            Dice d = DiceScene.Instantiate<Dice>();
-            DiceResultContainer.AddChild(d);
-            _resultedDices.Add(d);
-            d.SetDiceData(selectedDices[i]);
-            d.SetValue(val);
+            int raw = selectedDices[i].Roll();
+            ResultCard rc = ResultCardScene.Instantiate<ResultCard>();
+            DiceResultContainer.AddChild(rc);
+            _resultCards.Add(rc);
+            rc.Setup(selectedDices[i], raw);
         }
 
         // C. 判斷是否為有效組合
-        if (!IsValidCombination(_resultedDices))
+        if (!IsValidCombination(_resultCards))
         {
             ResultLabel.Text = "無有效組合，請重新選擇骰子再投擲。";
             _EnableRollButton(); // 允許再擲
             return;
         }
 
-        int score = HighlightConditionAndScoreDices(_resultedDices);
+        int score = HighlightConditionAndScoreCards(_resultCards);
         ResultLabel.Text = $"得分骰總和：{score}";
 
         CheckLevelFinish(score);
@@ -128,29 +128,27 @@ public partial class Main : Control
         UpdateLevelInfoUI();
     }
 
-    private bool IsValidCombination(List<Dice> dices)
+    private bool IsValidCombination(List<ResultCard> cards)
     {
         var seen = new HashSet<int>();
-        foreach (var d in dices)
+        foreach (var rc in cards)
         {
-            if (!seen.Add(d.OriginalValue))
+            if (!seen.Add(rc.FinalValue))
                 return true; // 出現重複
         }
         return false;
     }
 
     // 找到相同兩顆作為條件骰，其餘為得分骰
-    private int HighlightConditionAndScoreDices(List<Dice> dices)
+    private int HighlightConditionAndScoreCards(List<ResultCard> cards)
     {
-        // 統計出現次數
         var counts = new System.Collections.Generic.Dictionary<int, int>();
-        foreach (var d in dices)
+        foreach (var rc in cards)
         {
-            counts.TryGetValue(d.OriginalValue, out int c);
-            counts[d.OriginalValue] = c + 1;
+            counts.TryGetValue(rc.FinalValue, out int c);
+            counts[rc.FinalValue] = c + 1;
         }
 
-        // 找到「最小」且出現次數 >= 2 的點數作為條件骰
         int conditionValue = -1;
         foreach (var kv in counts)
         {
@@ -163,18 +161,17 @@ public partial class Main : Control
         int scoreSum = 0;
         int usedCondition = 0;
 
-        // 視覺標示：條件骰灰色，得分骰醒目色
-        foreach (var d in dices)
+        foreach (var rc in cards)
         {
-            if (d.OriginalValue == conditionValue && usedCondition < 2)
+            if (rc.FinalValue == conditionValue && usedCondition < 2)
             {
-                d.SetToConditionType();
+                rc.SetToConditionType();
                 usedCondition++;
             }
             else
             {
-                d.SetToScoreType();
-                scoreSum += d.OriginalValue;
+                rc.SetToScoreType();
+                scoreSum += rc.FinalValue;
             }
         }
         return scoreSum;

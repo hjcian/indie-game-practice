@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://bktp1tc3v8dul"]
 
 [ext_resource type="Script" uid="uid://4ycw4qqn3nkf" path="res://Main.cs" id="1_glv2v"]
+[ext_resource type="PackedScene" uid="uid://dv24t6lh2rbvq" path="res://ResultCard/ResultCard.tscn" id="2_j4qnp"]
 [ext_resource type="Resource" uid="uid://2o38wxxcvga5" path="res://Modifier/PlusOneModifier.tres" id="3_cm0pq"]
 [ext_resource type="Resource" uid="uid://ba44ahb7welcl" path="res://Modifier/DoubleModifier.tres" id="3_r0du0"]
 [ext_resource type="PackedScene" uid="uid://dpo48kodd7oft" path="res://ModifierCard/ModifierCard.tscn" id="4_cm0pq"]
@@ -28,6 +29,7 @@ RoundInfo = NodePath("VBoxContainer/LevelInfoVBox/ScoreInfo")
 DicePocketManager = NodePath("VBoxContainer/PlayerDicePocketManager")
 RollButton = NodePath("VBoxContainer/HBoxContainer/RollButton")
 DiceResultContainer = NodePath("VBoxContainer/DiceResultContainer")
+ResultCardScene = ExtResource("2_j4qnp")
 ResultLabel = NodePath("VBoxContainer/ResultLabel")
 LevelResultLabel = NodePath("VBoxContainer/LevelResultLabel")
 RewardWindowManager = NodePath("VBoxContainer/RewardWindowContainer/RewardWindow")
