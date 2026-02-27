@@ -11,7 +11,7 @@ public partial class PlayerDicePocketManager : Node
 
     private int _maxInitialDice = 4;
     private int _maxSelectable = 4;
-    private List<Dice> _selectedDices = [];
+    private List<DicePocketCard> _selectedCards = [];
 
     // 通知 Main 目前選擇是否達到可投擲數量
     [Signal]
@@ -21,36 +21,41 @@ public partial class PlayerDicePocketManager : Node
     {
         for (int i = 0; i < _maxInitialDice; i++)
         {
-            Dice diceUI = DiceScene.Instantiate<Dice>();
-            PocketContainer.AddChild(diceUI);
-            diceUI.SetValue(1);
-            diceUI.DiceSelected += isSelected => OnDiceSelected(diceUI, isSelected);
+            AddDice(DiceRegistry.Basic);
         }
     }
 
-    private void OnDiceSelected(Dice clickedDice, bool isSelected)
+    public void AddDice(DiceData diceData)
+    {
+        DicePocketCard card = DiceScene.Instantiate<DicePocketCard>();
+        PocketContainer.AddChild(card);
+        card.SetDiceData(diceData);
+        card.CardSelected += isSelected => OnCardSelected(card, isSelected);
+    }
+
+    private void OnCardSelected(DicePocketCard clickedCard, bool isSelected)
     {
         if (isSelected)
         {
-            if (_selectedDices.Count >= _maxSelectable)
+            if (_selectedCards.Count >= _maxSelectable)
             {
                 // FIFO：超過上限時自動移除最早選的
-                var removedDice = _selectedDices[0];
-                removedDice.SetSelected(false);
-                _selectedDices.RemoveAt(0);
+                var removedCard = _selectedCards[0];
+                removedCard.SetSelected(false);
+                _selectedCards.RemoveAt(0);
             }
-            _selectedDices.Add(clickedDice);
+            _selectedCards.Add(clickedCard);
         }
         else
         {
-            _selectedDices.Remove(clickedDice);
+            _selectedCards.Remove(clickedCard);
         }
 
-        EmitSignal(SignalName.SelectionReadyChanged, _selectedDices.Count >= _maxSelectable);
+        EmitSignal(SignalName.SelectionReadyChanged, _selectedCards.Count >= _maxSelectable);
     }
 
-    public List<Dice> GetSelectedDices()
+    public List<DiceData> GetSelectedDices()
     {
-        return _selectedDices;
+        return _selectedCards.ConvertAll(card => card.GetDiceData());
     }
 }

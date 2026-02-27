@@ -1,3 +1,10 @@
+public class BasicDice : DiceData
+{
+    public override string Name => "Basic";
+    public override string DescriptionEn => "A standard six-sided dice.";
+    public override string DescriptionZhTw => "標準六面骰子。";
+}
+
 public class Add1Dice : DiceData
 {
     public override string Name => "Add 1";

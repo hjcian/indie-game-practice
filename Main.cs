@@ -83,6 +83,7 @@ public partial class Main : Control
             Dice d = DiceScene.Instantiate<Dice>();
             DiceResultContainer.AddChild(d);
             _resultedDices.Add(d);
+            d.SetDiceData(selectedDices[i]);
             d.SetValue(val);
         }
 
@@ -201,6 +202,9 @@ public partial class Main : Control
     private void OnRewardConfirmed(DiceData selectedDice)
     {
         GD.Print($"[Main] 玩家確認選擇: {selectedDice.Name}");
+
+        // 將選中的骰子加入玩家口袋
+        DicePocketManager.AddDice(selectedDice);
 
         // 進入下一關
         _goal += 5; // 每關增加5點目標分數

@@ -6,6 +6,8 @@ using System.Collections.Generic;
 /// </summary>
 public static class DiceRegistry
 {
+    public static readonly BasicDice Basic = new BasicDice();
+
     public static readonly IReadOnlyList<DiceData> All = new List<DiceData>
     {
         // Basic

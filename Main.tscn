@@ -13,6 +13,7 @@
 [ext_resource type="Script" uid="uid://kjoxa4srs8vh" path="res://RewardWindowManager.cs" id="11_20pc6"]
 [ext_resource type="Script" uid="uid://djt2jt6tk0hx" path="res://PlayerDicePocket/PlayerDicePocketManager.cs" id="11_c6i3y"]
 [ext_resource type="PackedScene" uid="uid://yxkda7yafsxj" path="res://DiceRewardCard/DiceRewardCard.tscn" id="12_5vvyt"]
+[ext_resource type="PackedScene" uid="uid://nu7ci7rs2st1" path="res://PlayerDicePocket/PlayerDicePocket.tscn" id="12_c2ibq"]
 
 [node name="Main" type="Control" unique_id=1303641149 node_paths=PackedStringArray("LevelInfo", "RoundInfo", "DicePocketManager", "RollButton", "DiceResultContainer", "ResultLabel", "LevelResultLabel", "RewardWindowManager", "PreviewDamageLabel", "PlayerSkillsContainer")]
 layout_mode = 3
@@ -58,7 +59,7 @@ layout_mode = 2
 [node name="PlayerDicePocketManager" type="Node" parent="VBoxContainer" unique_id=166295297 node_paths=PackedStringArray("PocketContainer")]
 script = ExtResource("11_c6i3y")
 PocketContainer = NodePath("../PlayerDiceContainer")
-DiceScene = ExtResource("4_fos0i")
+DiceScene = ExtResource("12_c2ibq")
 
 [node name="PlayerDiceContainer" type="GridContainer" parent="VBoxContainer" unique_id=421033610]
 layout_mode = 2
