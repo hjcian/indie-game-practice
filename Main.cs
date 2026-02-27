@@ -78,8 +78,8 @@ public partial class Main : Control
 
         for (int i = 0; i < selectedDices.Count; i++)
         {
-            // 擲骰
-            int val = _random.Next(1, 7);
+            // 擲骰：由 DiceData 自己决定擲骰行為
+            int val = selectedDices[i].Roll();
             Dice d = DiceScene.Instantiate<Dice>();
             DiceResultContainer.AddChild(d);
             _resultedDices.Add(d);
